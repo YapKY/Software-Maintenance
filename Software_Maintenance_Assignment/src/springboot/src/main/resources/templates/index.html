@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Airline Booking System - Profile Management</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 900px;
+        width: 100%;
+        padding: 60px;
+        text-align: center;
+      }
+
+      h1 {
+        color: #667eea;
+        font-size: 3rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 1.2rem;
+        margin-bottom: 50px;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+      }
+
+      .profile-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 40px 30px;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-decoration: none;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .profile-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+      }
+
+      .profile-card.admin {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      .profile-card.admin:hover {
+        box-shadow: 0 15px 40px rgba(245, 87, 108, 0.4);
+      }
+
+      .icon {
+        font-size: 4rem;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .card-description {
+        font-size: 1rem;
+        opacity: 0.9;
+        line-height: 1.5;
+      }
+
+      .features {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 30px;
+        margin-top: 40px;
+      }
+
+      .features h3 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+
+      .features ul {
+        list-style: none;
+        text-align: left;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+
+      .features li {
+        color: #666;
+        padding: 10px;
+        border-left: 3px solid #667eea;
+        padding-left: 15px;
+      }
+
+      .features li::before {
+        content: "✓ ";
+        color: #667eea;
+        font-weight: bold;
+        margin-right: 5px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 30px;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .card-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>✈️ Airline Booking System</h1>
+      <p class="subtitle">Profile Management Portal</p>
+
+      <div class="card-grid">
+        <a th:href="@{/customer-profile}" class="profile-card">
+          <div class="icon">👤</div>
+          <div class="card-title">Customer Profile</div>
+          <div class="card-description">
+            View and manage your personal information, update contact details,
+            and manage your booking preferences
+          </div>
+        </a>
+
+        <a th:href="@{/staff-profile}" class="profile-card admin">
+          <div class="icon">👨‍💼</div>
+          <div class="card-title">Staff / Admin Profile</div>
+          <div class="card-description">
+            Access administrative dashboard, manage staff information, and
+            control system settings
+          </div>
+        </a>
+      </div>
+
+      <div class="features">
+        <h3>🎯 Features</h3>
+        <ul>
+          <li>View personal information</li>
+          <li>Edit profile details</li>
+          <li>Update contact information</li>
+          <li>Manage account settings</li>
+          <li>Real-time data validation</li>
+          <li>Secure data management</li>
+        </ul>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          margin-top: 30px;
+          padding: 20px;
+          background: white;
+          border-radius: 10px;
+        "
+      >
+        <p style="color: #666; margin-bottom: 10px">Quick Navigation:</p>
+        <a
+          th:href="@{/customer-profile}"
+          style="
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+          "
+          >Customer Profile</a
+        >
+        <a
+          th:href="@{/staff-profile}"
+          style="
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+          "
+          >Staff Profile</a
+        >
+      </div>
+    </div>
+  </body>
+</html>
