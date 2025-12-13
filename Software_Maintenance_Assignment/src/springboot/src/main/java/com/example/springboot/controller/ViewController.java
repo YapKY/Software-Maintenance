@@ -89,4 +89,19 @@ public class ViewController {
         model.addAttribute("staffId", id);
         return "staff-profile";
     }
+    
+    @GetMapping("/booking")
+    public String bookingPage() {
+        return "booking"; // Looks for booking.html in /templates
+    }
+
+    @GetMapping("/payment")
+    public String paymentPage() {
+        return "payment"; // Looks for payment.html
+    }
+
+    @GetMapping("/confirmation")
+    public String confirmationPage() {
+        return "confirmation"; // Looks for confirmation.html
+    }
 }
