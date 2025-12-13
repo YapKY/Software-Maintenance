@@ -121,23 +121,60 @@ import java.util.concurrent.ExecutionException;
      */
     private void enrichTicketDetails(Ticket ticket) {
         try {
-            // Get passenger
+            // 1. Get Passenger Details
             Passenger passenger = repository.findById("passengers", ticket.getPassengerId(), Passenger.class);
             ticket.setPassengerDetails(passenger);
-            
-            // Get flight
-            Flight flight = repository.findById("flights", ticket.getFlightId(), Flight.class);
-            ticket.setFlightDetails(flight);
-            
-            // Get seat
+
+            // 2. Get Seat Details (Crucial Step)
+            // We MUST find the seat to know which flight this ticket belongs to.
             Seat seat = repository.findById("seats", ticket.getSeatId(), Seat.class);
+            
             if (seat != null) {
+                // Set seat display info
                 ticket.setSeatNumberDisplay(String.valueOf(seat.getSeatNumber()));
                 ticket.setSeatClassDisplay(seat.getTypeOfSeat());
+                
+                System.out.println("✅ Found Seat: " + seat.getSeatNumber() + ", FlightRef: " + seat.getFlightId());
+
+                // 3. Get Flight Details using the ID found inside the SEAT
+                if (seat.getFlightId() != null) {
+                    Flight flight = getFlightByFlightIdField(seat.getFlightId());
+                    ticket.setFlightDetails(flight);
+                } else {
+                    System.err.println("❌ Seat found, but it has no flightId: " + seat.getDocumentId());
+                }
+            } else {
+                System.err.println("❌ Seat not found for ticket: " + ticket.getDocumentId());
             }
+
         } catch (Exception e) {
             System.err.println("⚠️ Error enriching ticket details: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+    /**
+     * ✅ NEW METHOD: Fetch flight by flightId field (F001, F002, etc)
+     * NOT by Firestore document ID
+     */
+    private Flight getFlightByFlightIdField(String flightId) throws ExecutionException, InterruptedException {
+        System.out.println("🔍 Searching for flight with flightId: " + flightId);
+        
+        // Query: SELECT * FROM flights WHERE flightId = "F001"
+        var querySnapshot = repository.getCollectionByField("flights", "flightId", flightId).get().get();
+        
+        if (querySnapshot.isEmpty()) {
+            System.err.println("❌ No flight found with flightId: " + flightId);
+            return null;
+        }
+        
+        // Get first matching document
+        QueryDocumentSnapshot doc = querySnapshot.getDocuments().get(0);
+        Flight flight = doc.toObject(Flight.class);
+        flight.setDocumentId(doc.getId());
+        
+        System.out.println("✅ Found flight: " + flight.getFlightId() + " (Document ID: " + doc.getId() + ")");
+        return flight;
+    }
+    
 }
