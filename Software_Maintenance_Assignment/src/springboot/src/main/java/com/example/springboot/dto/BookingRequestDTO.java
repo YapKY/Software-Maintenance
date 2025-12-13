@@ -1,4 +1,6 @@
-package com.example.springboot.model;
+package com.example.springboot.dto;
+
+import com.example.springboot.model.Passenger;
 
 import lombok.Data;
 
