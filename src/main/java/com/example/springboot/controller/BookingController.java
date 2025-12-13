@@ -21,13 +21,23 @@ public class BookingController {
 
     // 1. Get Seats
     @GetMapping("/seats/{flightId}")
-    public ResponseEntity<List<Seat>> getSeats(@PathVariable String flightId) {
-        try {
-            return ResponseEntity.ok(bookingService.getSeatsForFlight(flightId));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).build();
-        }
+public ResponseEntity<?> getSeats(@PathVariable String flightId) {
+    try {
+        // Try to fetch by flightId field first (e.g., "F001")
+        List<Seat> seats = bookingService.getSeatsByFlightId(flightId);
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "count", seats.size(),
+            "seats", seats
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of(
+            "success", false,
+            "message", "Failed to load seats: " + e.getMessage()
+        ));
     }
+}
 
     // 2. Initiate Stripe Payment
     @PostMapping("/payment/initiate")

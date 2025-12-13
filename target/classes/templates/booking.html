@@ -4,6 +4,7 @@
     <title>Select Seat & Book</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+<<<<<<< HEAD
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -203,16 +204,76 @@
                     <div class="d-flex justify-content-between mb-3">
                         <h5>Total Price:</h5>
                         <h5 id="priceDisplay" style="color: #667eea;">RM 0.00</h5>
+=======
+        .seat-grid { display: grid; grid-template-columns: repeat(4, 50px); gap: 10px; justify-content: center; margin: 20px 0; }
+        .seat { width: 50px; height: 50px; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .seat.available { background-color: #e8f5e9; color: green; }
+        .seat.booked { background-color: #ffebee; color: red; cursor: not-allowed; }
+        .seat.selected { background-color: #2196f3; color: white; border-color: #0d47a1; }
+        .aisle { width: 20px; } /* Gap for aisle */
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h4 class="text-center">Select Your Seat</h4>
+                <div class="d-flex justify-content-center mb-3">
+                    <small class="me-3"><span class="badge bg-success">&nbsp;</span> Available</small>
+                    <small class="me-3"><span class="badge bg-danger">&nbsp;</span> Booked</small>
+                    <small><span class="badge bg-primary">&nbsp;</span> Selected</small>
+                </div>
+                
+                <div id="seat-map-container" class="text-center">
+                    <p>Loading seats...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h4>Passenger Details</h4>
+                <form id="bookingForm">
+                    <div class="mb-3">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Passport Number</label>
+                        <input type="text" id="passport" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email (For Ticket)</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Phone Number</label>
+                        <input type="text" id="phone" class="form-control" required>
+                    </div>
+                    
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <h5>Total Price:</h5>
+                        <h5 id="priceDisplay">RM 0.00</h5>
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
                     </div>
                     
                     <input type="hidden" id="selectedSeatId">
                     <input type="hidden" id="selectedAmount">
+<<<<<<< HEAD
                     <input type="hidden" id="selectedSeatNumber">
                     <input type="hidden" id="selectedSeatClass">
                     
                     <button type="button" class="btn btn-primary w-100" 
                             onclick="proceedToPayment()" disabled id="proceedBtn">
                         Select a seat to continue
+=======
+                    
+                    <button type="button" class="btn btn-primary w-100 mt-3" onclick="proceedToPayment()">
+                        Proceed to Payment
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
                     </button>
                 </form>
             </div>
@@ -221,6 +282,7 @@
 </div>
 
 <script>
+<<<<<<< HEAD
     const urlParams = new URLSearchParams(window.location.search);
     const FLIGHT_ID = urlParams.get('flightId') || /*[[${flightId}]]*/ "";
     const CUSTOMER_ID = urlParams.get('customerId') || /*[[${customerId}]]*/ "GUEST";
@@ -305,26 +367,54 @@
         
         const grid = document.getElementById("grid");
 
+=======
+    const FLIGHT_ID = "FLIGHT-001"; // You can get this from URL params
+    const CUSTOMER_ID = "cust-123";  // In real app, get from Session/Login
+
+    // 1. Fetch Seats on Load
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch(`/api/booking/seats/${FLIGHT_ID}`)
+            .then(res => res.json())
+            .then(seats => renderSeats(seats))
+            .catch(err => console.error("Error loading seats:", err));
+    });
+
+    // 2. Render Seats
+    function renderSeats(seats) {
+        const container = document.getElementById("seat-map-container");
+        container.innerHTML = '<div class="seat-grid" id="grid"></div>';
+        const grid = document.getElementById("grid");
+
+        // Sort seats by number
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
         seats.sort((a, b) => a.seatNumber - b.seatNumber);
 
         seats.forEach(seat => {
             const div = document.createElement("div");
+<<<<<<< HEAD
             
             // ✅ FIXED: Add class based on typeOfSeat
             const seatClass = seat.typeOfSeat === 'Business' ? 'business' : 'economy';
             const statusClass = seat.statusSeat === 'Booked' ? 'booked' : seatClass;
             
             div.className = `seat ${statusClass}`;
+=======
+            div.className = `seat ${seat.statusSeat === 'Booked' ? 'booked' : 'available'}`;
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
             div.innerText = seat.seatNumber;
             
             if (seat.statusSeat !== 'Booked') {
                 div.onclick = () => selectSeat(div, seat);
             }
+<<<<<<< HEAD
             
+=======
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
             grid.appendChild(div);
         });
     }
 
+<<<<<<< HEAD
     // ✅ FIXED: Handle seat selection with proper pricing
     function selectSeat(element, seat) {
         document.querySelectorAll('.seat.selected').forEach(el => {
@@ -385,6 +475,31 @@
             seatId: seatId,
             seatNumber: document.getElementById("selectedSeatNumber").value,
             seatClass: document.getElementById("selectedSeatClass").value,
+=======
+    // 3. Handle Selection
+    function selectSeat(element, seat) {
+        // Clear previous selection
+        document.querySelectorAll('.seat.selected').forEach(el => el.classList.remove('selected'));
+        
+        // Select new
+        element.classList.add('selected');
+        document.getElementById("selectedSeatId").value = seat.documentId;
+        
+        // Set Price (Example logic)
+        const price = seat.typeOfSeat === 'Business' ? 500.00 : 150.00;
+        document.getElementById("selectedAmount").value = price;
+        document.getElementById("priceDisplay").innerText = "RM " + price.toFixed(2);
+    }
+
+    // 4. Save Data to LocalStorage & Go to Payment
+    function proceedToPayment() {
+        const seatId = document.getElementById("selectedSeatId").value;
+        if (!seatId) { alert("Please select a seat!"); return; }
+
+        const bookingData = {
+            customerId: CUSTOMER_ID,
+            seatId: seatId,
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
             amount: document.getElementById("selectedAmount").value,
             passenger: {
                 fullName: document.getElementById("fullName").value,
@@ -394,6 +509,7 @@
             }
         };
         
+<<<<<<< HEAD
         localStorage.setItem("tempBookingData", JSON.stringify(bookingData));
         window.location.href = "/payment";
     }
@@ -406,5 +522,13 @@
         return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
     }
 </script>
+=======
+        // Temporarily store data to pass to payment page
+        localStorage.setItem("tempBookingData", JSON.stringify(bookingData));
+        window.location.href = "/payment"; // Navigate to payment.html
+    }
+</script>
+
+>>>>>>> 135227258354b5c154d043122d09105cd6ab6697
 </body>
 </html>
