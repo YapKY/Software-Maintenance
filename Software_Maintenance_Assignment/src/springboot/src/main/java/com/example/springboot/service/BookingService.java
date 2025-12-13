@@ -13,10 +13,22 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Service
-public class BookingService {
+    public class BookingService {
 
-    @Autowired private FirestoreRepository repository;
-    @Autowired private NotificationService notificationService;
+        @Autowired private FirestoreRepository repository;
+        @Autowired private NotificationService notificationService;
+
+        public List<Seat> getSeatsByFlightId(String flightId) throws ExecutionException, InterruptedException {
+        List<Seat> seats = new ArrayList<>();
+        var querySnapshot = repository.getCollectionByField("seats", "flightId", flightId).get().get();
+        
+        for (QueryDocumentSnapshot doc : querySnapshot.getDocuments()) {
+            Seat seat = doc.toObject(Seat.class);
+            seat.setDocumentId(doc.getId());
+            seats.add(seat);
+        }
+        return seats;
+    }   
 
     // Module 1: Display Seats
     public List<Seat> getSeatsForFlight(String flightId) throws ExecutionException, InterruptedException {
@@ -79,5 +91,53 @@ public class BookingService {
         }
         ticket.setDocumentId(ticketId);
         return ticket;
+    }
+
+    /**
+     * Get all tickets for a customer
+     */
+    public List<Ticket> getCustomerTickets(String customerId) throws ExecutionException, InterruptedException {
+        System.out.println("🔍 Loading tickets for customer: " + customerId);
+        
+        List<Ticket> customerTickets = new ArrayList<>();
+        var querySnapshot = repository.getCollectionByField("tickets", "customerId", customerId).get().get();
+        
+        for (QueryDocumentSnapshot doc : querySnapshot.getDocuments()) {
+            Ticket ticket = doc.toObject(Ticket.class);
+            ticket.setDocumentId(doc.getId());
+            
+            // Enrich each ticket with details
+            enrichTicketDetails(ticket);
+            
+            customerTickets.add(ticket);
+        }
+        
+        System.out.println("✅ Found " + customerTickets.size() + " tickets");
+        return customerTickets;
+    }
+
+    /**
+     * Enrich ticket with flight and passenger details
+     */
+    private void enrichTicketDetails(Ticket ticket) {
+        try {
+            // Get passenger
+            Passenger passenger = repository.findById("passengers", ticket.getPassengerId(), Passenger.class);
+            ticket.setPassengerDetails(passenger);
+            
+            // Get flight
+            Flight flight = repository.findById("flights", ticket.getFlightId(), Flight.class);
+            ticket.setFlightDetails(flight);
+            
+            // Get seat
+            Seat seat = repository.findById("seats", ticket.getSeatId(), Seat.class);
+            if (seat != null) {
+                ticket.setSeatNumberDisplay(String.valueOf(seat.getSeatNumber()));
+                ticket.setSeatClassDisplay(seat.getTypeOfSeat());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error enriching ticket details: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -89,10 +89,18 @@ public class ViewController {
         model.addAttribute("staffId", id);
         return "staff-profile";
     }
-    
+
     @GetMapping("/booking")
-    public String bookingPage() {
-        return "booking"; // Looks for booking.html in /templates
+    public String bookingPage(
+        @RequestParam(required = false) String flightId,
+        @RequestParam(required = false) String customerId,
+        Model model) {
+    
+        // Pass flightId and customerId to the view
+        model.addAttribute("flightId", flightId != null ? flightId : "");
+        model.addAttribute("customerId", customerId != null ? customerId : "GUEST");
+    
+        return "booking"; // Renders booking.html
     }
 
     @GetMapping("/payment")
@@ -103,5 +111,19 @@ public class ViewController {
     @GetMapping("/confirmation")
     public String confirmationPage() {
         return "confirmation"; // Looks for confirmation.html
+    }
+
+    @GetMapping("/search-flight")
+    public String searchFlightPage() {
+        return "search-flight"; // Renders search-flight.html
+    }
+
+    @GetMapping("/my-tickets")
+    public String myTicketsPage(
+            @RequestParam(required = false) String customerId,
+            Model model) {
+        
+        model.addAttribute("customerId", customerId != null ? customerId : "cust-123");
+        return "my-tickets";
     }
 }

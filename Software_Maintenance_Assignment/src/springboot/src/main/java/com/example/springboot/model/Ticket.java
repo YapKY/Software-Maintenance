@@ -7,12 +7,17 @@ public class Ticket {
     private String documentId;
     private String bookingReference; // Unique UUID for QR Code
     
-    // References (Foreign Keys in NoSQL)
+    // References
     private String customerId;
     private String passengerId;
     private String seatId;
+    private String flightId;  // NEW
     
-    // Display Helpers (Not stored in DB, populated by Service)
+    // Display fields
     private String seatNumberDisplay;
     private String seatClassDisplay;
+    
+    // Full objects for display (not stored in DB)
+    private Flight flightDetails;      // NEW
+    private Passenger passengerDetails; // NEW
 }

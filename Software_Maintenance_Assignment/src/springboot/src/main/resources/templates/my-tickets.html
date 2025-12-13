@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tickets - Airline Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .ticket-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .ticket-header {
+            border-bottom: 2px dashed #e0e0e0;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .booking-ref {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .flight-route {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .location {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .arrow {
+            color: #667eea;
+            font-size: 2rem;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .detail-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        .btn-download {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-download:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .no-tickets {
+            background: white;
+            padding: 60px 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 style="color: #667eea; margin: 0;">🎫 My Flight Tickets</h2>
+            <div>
+                <a href="/search-flight" class="btn btn-outline-primary me-2">🔍 Search Flights</a>
+                <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-3">Loading your tickets...</p>
+    </div>
+
+    <!-- Tickets Container -->
+    <div id="ticketsContainer" style="display: none;"></div>
+
+    <!-- No Tickets State -->
+    <div id="noTickets" class="no-tickets" style="display: none;">
+        <h3>📭 No Tickets Found</h3>
+        <p class="text-muted">You haven't booked any flights yet.</p>
+        <a href="/search-flight" class="btn btn-primary mt-3">Search Flights</a>
+    </div>
+</div>
+
+<script>
+    const CUSTOMER_ID = /*[[${customerId}]]*/ "cust-123";
+
+    // Load tickets on page load
+    document.addEventListener('DOMContentLoaded', loadTickets);
+
+    async function loadTickets() {
+        try {
+            const response = await fetch(`/api/tickets/customer/${CUSTOMER_ID}`);
+            const data = await response.json();
+
+            document.getElementById('loadingState').style.display = 'none';
+
+            if (data.success && data.tickets.length > 0) {
+                displayTickets(data.tickets);
+            } else {
+                document.getElementById('noTickets').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error loading tickets:', error);
+            document.getElementById('loadingState').innerHTML = 
+                '<p class="text-danger">Failed to load tickets. Please try again.</p>';
+        }
+    }
+
+    function displayTickets(tickets) {
+        const container = document.getElementById('ticketsContainer');
+        container.innerHTML = '';
+
+        tickets.forEach(ticket => {
+            const card = createTicketCard(ticket);
+            container.appendChild(card);
+        });
+
+        container.style.display = 'block';
+    }
+
+    function createTicketCard(ticket) {
+        const card = document.createElement('div');
+        card.className = 'ticket-card';
+
+        const flight = ticket.flightDetails || {};
+        const passenger = ticket.passengerDetails || {};
+
+        card.innerHTML = `
+            <div class="ticket-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="booking-ref">
+                        🎫 ${ticket.bookingReference}
+                    </div>
+                    <button class="btn-download" onclick="downloadTicket('${ticket.documentId}')">
+                        📥 Download PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="flight-route">
+                <div class="location">${flight.departureCountry || 'N/A'}</div>
+                <div class="arrow">✈️ →</div>
+                <div class="location">${flight.arrivalCountry || 'N/A'}</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Flight</div>
+                    <div class="detail-value">${flight.flightId || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Passenger</div>
+                    <div class="detail-value">${passenger.fullName || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Seat</div>
+                    <div class="detail-value">${ticket.seatNumberDisplay || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Class</div>
+                    <div class="detail-value">${ticket.seatClassDisplay || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Departure</div>
+                    <div class="detail-value">${flight.departureDate || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Time</div>
+                    <div class="detail-value">${formatTime(flight.departureTime)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Boarding</div>
+                    <div class="detail-value">${formatTime(flight.boardingTime)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Passport</div>
+                    <div class="detail-value">${passenger.passportNo || 'N/A'}</div>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    function downloadTicket(ticketId) {
+        // Open PDF in new tab for download
+        window.open(`/api/tickets/${ticketId}/download`, '_blank');
+    }
+
+    function formatTime(time) {
+        if (!time) return 'N/A';
+        const hours = Math.floor(time / 100);
+        const minutes = time % 100;
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+    }
+</script>
+
+</body>
+</html>
