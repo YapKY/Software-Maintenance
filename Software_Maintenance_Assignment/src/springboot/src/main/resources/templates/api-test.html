@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>API Test</title>
+  </head>
+  <body>
+    <h1>API Connection Test</h1>
+    <div id="status">Testing...</div>
+    <div id="results"></div>
+
+    <script>
+      const API_BASE =
+        window.location.protocol === "file:"
+          ? "http://localhost:8081/api"
+          : "/api";
+      const statusDiv = document.getElementById("status");
+      const resultsDiv = document.getElementById("results");
+
+      async function testAPI() {
+        try {
+          statusDiv.innerHTML = "🔄 Testing Customers API...";
+          const custResponse = await fetch(`${API_BASE}/customers`);
+          if (!custResponse.ok)
+            throw new Error(`Customers API returned ${custResponse.status}`);
+          const customers = await custResponse.json();
+
+          statusDiv.innerHTML = "🔄 Testing Staff API...";
+          const staffResponse = await fetch(`${API_BASE}/staff`);
+          if (!staffResponse.ok)
+            throw new Error(`Staff API returned ${staffResponse.status}`);
+          const staff = await staffResponse.json();
+
+          statusDiv.innerHTML = "✅ All APIs Working!";
+          resultsDiv.innerHTML = `
+                    <h3>Results:</h3>
+                    <p>Protocol: ${window.location.protocol}</p>
+                    <p>API Base: ${API_BASE}</p>
+                    <p>✅ Customers: ${customers.length} records</p>
+                    <p>✅ Staff: ${staff.length} records</p>
+                    <h4>Customers:</h4>
+                    <ul>${customers
+                      .map((c) => `<li>${c.name} (${c.email})</li>`)
+                      .join("")}</ul>
+                    <h4>Staff:</h4>
+                    <ul>${staff
+                      .map(
+                        (s) => `<li>${s.name} (${s.email}) - ${s.position}</li>`
+                      )
+                      .join("")}</ul>
+                `;
+        } catch (error) {
+          statusDiv.innerHTML = "❌ Error!";
+          resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        }
+      }
+
+      testAPI();
+    </script>
+  </body>
+</html>

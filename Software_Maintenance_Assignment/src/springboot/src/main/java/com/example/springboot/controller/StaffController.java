@@ -130,8 +130,7 @@ public class StaffController {
             Staff saved = staffService.updateStaff(id, updatedStaff);
             return ResponseEntity.ok(createStaffResponse(saved));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         }
     }
 
@@ -155,7 +154,6 @@ public class StaffController {
     // Helper methods for legacy-style responses
     private Map<String, Object> createStaffResponse(Staff staff) {
         Map<String, Object> response = new HashMap<>();
-        response.put("id", staff.getId());
         response.put("staffId", staff.getStaffId());
         response.put("position", staff.getPosition());
         response.put("name", staff.getName());
@@ -204,13 +202,13 @@ public class StaffController {
     public ResponseEntity<?> debugCreateTestStaff() {
         try {
             Staff testStaff = new Staff(
-                    "TEST001",
                     "Test Manager",
                     "11111",
                     "Test Staff",
                     "012-1234567",
                     "Male",
                     "teststaff@example.com");
+            testStaff.setStaffId(null); // Auto-generated
             Staff saved = staffService.createStaff(testStaff);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

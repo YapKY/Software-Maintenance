@@ -125,8 +125,7 @@ public class CustomerController {
             Customer saved = customerService.updateCustomer(id, updatedCustomer);
             return ResponseEntity.ok(createCustomerResponse(saved));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         }
     }
 
@@ -150,7 +149,7 @@ public class CustomerController {
     // Helper methods for legacy-style responses
     private Map<String, Object> createCustomerResponse(Customer customer) {
         Map<String, Object> response = new HashMap<>();
-        response.put("id", customer.getId());
+        response.put("custId", customer.getCustId());
         response.put("custIcNo", customer.getCustIcNo()); // Fixed: matches frontend expectation
         response.put("name", customer.getName());
         response.put("email", customer.getEmail());

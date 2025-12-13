@@ -1,35 +1,19 @@
 package com.example.springboot.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
-/**
- * Legacy-style Person abstract entity
- * Contains validation logic mixed with entity - intentional anti-pattern for
- * modernization demo
- * 
- * @author KY YAP (Original Legacy Code)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@MappedSuperclass
 public abstract class Person {
 
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false)
     private String phoneNumber;
-
-    @Column(nullable = false)
     private String gender;
-
-    @Column(nullable = false, unique = true)
     private String email;
 
     // Legacy validation methods - intentionally kept in entity class (anti-pattern)

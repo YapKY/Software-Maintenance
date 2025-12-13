@@ -151,21 +151,21 @@
       <p class="subtitle">Profile Management Portal</p>
 
       <div class="card-grid">
-        <a th:href="@{/customer-profile}" class="profile-card">
-          <div class="icon">👤</div>
-          <div class="card-title">Customer Profile</div>
+        <a th:href="@{/customer-list}" class="profile-card">
+          <div class="icon">👥</div>
+          <div class="card-title">Customer List</div>
           <div class="card-description">
-            View and manage your personal information, update contact details,
-            and manage your booking preferences
+            View and manage all customer accounts, search customer information,
+            and access individual customer profiles
           </div>
         </a>
 
-        <a th:href="@{/staff-profile}" class="profile-card admin">
+        <a th:href="@{/staff-list}" class="profile-card admin">
           <div class="icon">👨‍💼</div>
-          <div class="card-title">Staff / Admin Profile</div>
+          <div class="card-title">Staff / Admin List</div>
           <div class="card-description">
-            Access administrative dashboard, manage staff information, and
-            control system settings
+            View all staff and admin accounts, manage employee information, and
+            access administrative controls
           </div>
         </a>
       </div>
@@ -193,7 +193,7 @@
       >
         <p style="color: #666; margin-bottom: 10px">Quick Navigation:</p>
         <a
-          th:href="@{/customer-profile}"
+          th:href="@{/customer-list}"
           style="
             display: inline-block;
             padding: 10px 20px;
@@ -204,10 +204,10 @@
             border-radius: 8px;
             font-weight: 500;
           "
-          >Customer Profile</a
+          >Customer List</a
         >
         <a
-          th:href="@{/staff-profile}"
+          th:href="@{/staff-list}"
           style="
             display: inline-block;
             padding: 10px 20px;
@@ -218,7 +218,7 @@
             border-radius: 8px;
             font-weight: 500;
           "
-          >Staff Profile</a
+          >Staff List</a
         >
       </div>
     </div>

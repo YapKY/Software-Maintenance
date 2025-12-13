@@ -89,4 +89,63 @@ public class ViewController {
         model.addAttribute("staffId", id);
         return "staff-profile";
     }
+
+    /**
+     * Customer list page - Shows all customers in a table
+     * URL: http://localhost:8081/customer-list
+     */
+    @GetMapping("/customer-list")
+    public String customerList() {
+        return "customer-list";
+    }
+
+    /**
+     * Staff list page - Shows all staff members in a table
+     * URL: http://localhost:8081/staff-list
+     */
+    @GetMapping("/staff-list")
+    public String staffList() {
+        return "staff-list";
+    }
+
+    /**
+     * API test page - For testing API connectivity
+     * URL: http://localhost:8081/api-test
+     */
+    @GetMapping("/api-test")
+    public String apiTest() {
+        return "api-test";
+    }
+
+    /**
+     * Customer detail page - Shows individual customer profile with view/edit
+     * URL: http://localhost:8081/customer-detail
+     * 
+     * @param email Optional email param - if present, redirects to list page
+     * @return View name "customer-detail"
+     */
+    @GetMapping("/customer-detail")
+    public String customerDetail(@RequestParam(value = "email", required = false) String email) {
+        // Security: If email is in URL, redirect to list (prevents direct URL access)
+        if (email != null && !email.isEmpty()) {
+            return "redirect:/customer-list";
+        }
+        return "customer-detail";
+    }
+
+    /**
+     * Staff detail page - Shows individual staff profile with view/edit
+     * URL: http://localhost:8081/staff-detail
+     * 
+     * @param email Optional email param - if present, redirects to list page
+     * @return View name "staff-detail"
+     */
+    @GetMapping("/staff-detail")
+    public String staffDetail(@RequestParam(value = "email", required = false) String email) {
+        // Security: If email is in URL, redirect to list (prevents direct URL access)
+        if (email != null && !email.isEmpty()) {
+            return "redirect:/staff-list";
+        }
+        return "staff-detail";
+    }
 }

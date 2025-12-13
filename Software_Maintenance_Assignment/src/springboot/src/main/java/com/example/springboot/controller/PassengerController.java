@@ -69,9 +69,14 @@ public class PassengerController {
      * Get all passengers
      */
     @GetMapping
-    public ResponseEntity<List<Passenger>> getAllPassengers() {
-        List<Passenger> passengers = passengerRepository.findAll();
-        return ResponseEntity.ok(passengers);
+    public ResponseEntity<?> getAllPassengers() {
+        try {
+            List<Passenger> passengers = passengerRepository.findAll();
+            return ResponseEntity.ok(passengers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error fetching passengers: " + e.getMessage()));
+        }
     }
 
     /**
@@ -79,12 +84,17 @@ public class PassengerController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getPassengerById(@PathVariable String id) {
-        Optional<Passenger> passenger = passengerRepository.findById(id);
-        if (passenger.isPresent()) {
-            return ResponseEntity.ok(createPassengerResponse(passenger.get()));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse("Passenger not found"));
+        try {
+            Optional<Passenger> passenger = passengerRepository.findById(id);
+            if (passenger.isPresent()) {
+                return ResponseEntity.ok(createPassengerResponse(passenger.get()));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Passenger not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error fetching passenger: " + e.getMessage()));
         }
     }
 
@@ -93,12 +103,17 @@ public class PassengerController {
      */
     @GetMapping("/passport/{passportNo}")
     public ResponseEntity<?> getPassengerByPassportNo(@PathVariable String passportNo) {
-        Optional<Passenger> passenger = passengerRepository.findByPassportNo(passportNo);
-        if (passenger.isPresent()) {
-            return ResponseEntity.ok(createPassengerResponse(passenger.get()));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse("Passenger not found"));
+        try {
+            Optional<Passenger> passenger = passengerRepository.findByPassportNo(passportNo);
+            if (passenger.isPresent()) {
+                return ResponseEntity.ok(createPassengerResponse(passenger.get()));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Passenger not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error fetching passenger: " + e.getMessage()));
         }
     }
 
@@ -107,28 +122,33 @@ public class PassengerController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePassenger(@PathVariable String id, @RequestBody Passenger updatedPassenger) {
-        Optional<Passenger> existingPassenger = passengerRepository.findById(id);
+        try {
+            Optional<Passenger> existingPassenger = passengerRepository.findById(id);
 
-        if (existingPassenger.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse("Passenger not found"));
-        }
+            if (existingPassenger.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Passenger not found"));
+            }
 
-        Passenger passenger = existingPassenger.get();
+            Passenger passenger = existingPassenger.get();
 
-        // Update fields
-        if (updatedPassenger.getName() != null) {
-            passenger.setName(updatedPassenger.getName());
-        }
-        if (updatedPassenger.getEmail() != null) {
-            passenger.setEmail(updatedPassenger.getEmail());
-        }
-        if (updatedPassenger.getPhoneNumber() != null) {
-            passenger.setPhoneNumber(updatedPassenger.getPhoneNumber());
-        }
+            // Update fields
+            if (updatedPassenger.getName() != null) {
+                passenger.setName(updatedPassenger.getName());
+            }
+            if (updatedPassenger.getEmail() != null) {
+                passenger.setEmail(updatedPassenger.getEmail());
+            }
+            if (updatedPassenger.getPhoneNumber() != null) {
+                passenger.setPhoneNumber(updatedPassenger.getPhoneNumber());
+            }
 
-        Passenger saved = passengerRepository.save(passenger);
-        return ResponseEntity.ok(createPassengerResponse(saved));
+            Passenger saved = passengerRepository.save(passenger);
+            return ResponseEntity.ok(createPassengerResponse(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error updating passenger: " + e.getMessage()));
+        }
     }
 
     /**
@@ -136,22 +156,27 @@ public class PassengerController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePassenger(@PathVariable String id) {
-        if (passengerRepository.existsById(id)) {
-            passengerRepository.deleteById(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Passenger deleted successfully");
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse("Passenger not found"));
+        try {
+            if (passengerRepository.existsById(id)) {
+                passengerRepository.deleteById(id);
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Passenger deleted successfully");
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Passenger not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error deleting passenger: " + e.getMessage()));
         }
     }
 
     // Helper methods
     private Map<String, Object> createPassengerResponse(Passenger passenger) {
         Map<String, Object> response = new HashMap<>();
-        response.put("id", passenger.getId());
+        response.put("passengerId", passenger.getPassengerId());
         response.put("passportNo", passenger.getPassportNo());
         response.put("name", passenger.getName());
         response.put("email", passenger.getEmail());

@@ -1,21 +1,33 @@
 package com.example.springboot.generator;
 
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.id.IdentifierGenerator;
-import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QuerySnapshot;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.ExecutionException;
 
 /**
- * Custom ID generator for Customer entity
- * Generates IDs in format: C000001, C000002, etc.
+ * Customer ID Generator
+ * Auto-generates custId based on current record count in Firebase
  */
-public class CustomerIdGenerator implements IdentifierGenerator {
+@Component
+public class CustomerIdGenerator {
 
-    private final AtomicLong counter = new AtomicLong(0);
+    private static final String COLLECTION_NAME = "customers";
 
-    @Override
-    public Serializable generate(SharedSessionContractImplementor session, Object object) {
-        long nextId = counter.incrementAndGet();
-        return String.format("C%06d", nextId);
+    @Autowired
+    private Firestore firestore;
+
+    /**
+     * Generate next customer ID based on current count
+     * 
+     * @return Sequential customer ID (e.g., "C00001", "C00002", "C00003")
+     */
+    public String generateId() throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME).get();
+        long count = future.get().size();
+        return "C" + String.format("%05d", count + 1);
     }
 }

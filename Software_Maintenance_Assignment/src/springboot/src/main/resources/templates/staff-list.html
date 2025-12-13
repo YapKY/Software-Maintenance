@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Staff - Airline Booking System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      #app {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        padding: 20px 30px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        color: #f5576c;
+        font-size: 2rem;
+      }
+
+      .back-btn {
+        background: #f5576c;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.3s;
+      }
+
+      .back-btn:hover {
+        background: #e04454;
+      }
+
+      .content-container {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .loading,
+      .error {
+        text-align: center;
+        padding: 40px;
+        font-size: 1.2rem;
+      }
+
+      .error {
+        color: #e74c3c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+      }
+
+      thead tr {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      td {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      tbody tr {
+        transition: background 0.3s;
+      }
+
+      tbody tr:hover {
+        background: #fff5f8;
+      }
+
+      .action-btn {
+        background: #f5576c;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.3s;
+        font-size: 0.9rem;
+      }
+
+      .action-btn:hover {
+        background: #e04454;
+      }
+
+      .position-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        overflow-y: auto;
+      }
+
+      .modal-content {
+        background: white;
+        max-width: 800px;
+        margin: 50px auto;
+        border-radius: 15px;
+        padding: 40px;
+        position: relative;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .close-btn:hover {
+        background: #c0392b;
+      }
+
+      .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      .profile-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .profile-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+      }
+
+      .profile-title h2 {
+        color: #333;
+        font-size: 1.8rem;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-group label {
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #f5576c;
+      }
+
+      .form-group input:disabled {
+        background: #f5f5f5;
+        cursor: not-allowed;
+      }
+
+      .view-mode .value {
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        color: #333;
+        min-height: 45px;
+        display: flex;
+        align-items: center;
+      }
+
+      .staff-id {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .edit-btn,
+      .save-btn,
+      .cancel-btn {
+        padding: 10px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+        margin-left: 10px;
+      }
+
+      .edit-btn {
+        background: #f5576c;
+        color: white;
+      }
+
+      .edit-btn:hover {
+        background: #e04454;
+      }
+
+      .save-btn {
+        background: #27ae60;
+        color: white;
+      }
+
+      .save-btn:hover {
+        background: #229954;
+      }
+
+      .cancel-btn {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .cancel-btn:hover {
+        background: #c0392b;
+      }
+
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        border: 1px solid #c3e6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="header">
+        <h1>👥 All Staff / Admin</h1>
+        <div>
+          <a href="/" class="back-btn">← Back to Home</a>
+          <a href="/customer-list" class="back-btn" style="margin-left: 10px"
+            >Customer Profiles →</a
+          >
+        </div>
+      </div>
+
+      <div class="content-container">
+        <div id="loading" class="loading" style="display: none">
+          ⏳ Loading staff...
+        </div>
+        <div id="error" class="error" style="display: none"></div>
+
+        <!-- Staff Table -->
+        <div id="staffTable" style="display: none">
+          <div
+            style="
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <h2 style="color: #f5576c; margin: 0">📋 Staff List</h2>
+            <div style="color: #666; font-size: 0.9rem">
+              Total: <span id="staffCount">0</span> staff
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Gender</th>
+                <th style="text-align: center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staffTableBody">
+              <!-- Staff rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Detail Modal -->
+    <div id="staffModal" class="modal">
+      <div class="modal-content">
+        <button onclick="closeModal()" class="close-btn">×</button>
+
+        <div id="modalLoading" class="loading" style="display: none">
+          ⏳ Loading...
+        </div>
+        <div id="modalError" class="error" style="display: none"></div>
+        <div
+          id="modalSuccess"
+          class="success-message"
+          style="display: none"
+        ></div>
+
+        <div id="staffData" style="display: none">
+          <div class="staff-id">
+            <span class="position-badge" id="displayPositionBadge"></span>
+          </div>
+
+          <div class="profile-header">
+            <div class="profile-title">
+              <div class="profile-icon">👨‍💼</div>
+              <h2 id="displayName"></h2>
+            </div>
+            <div id="viewButtons">
+              <button class="edit-btn" onclick="enableEdit()">
+                ✏️ Edit Profile
+              </button>
+            </div>
+            <div id="editButtons" style="display: none">
+              <button class="save-btn" onclick="saveProfile()">
+                💾 Save Changes
+              </button>
+              <button class="cancel-btn" onclick="cancelEdit()">
+                ❌ Cancel
+              </button>
+            </div>
+          </div>
+
+          <!-- View Mode -->
+          <div id="viewMode" class="form-grid view-mode">
+            <div class="form-group">
+              <label>Full Name</label>
+              <div class="value" id="viewName"></div>
+            </div>
+            <div class="form-group">
+              <label>Position</label>
+              <div class="value" id="viewPosition"></div>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <div class="value" id="viewEmail"></div>
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <div class="value" id="viewPhone"></div>
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <div class="value" id="viewGender"></div>
+            </div>
+          </div>
+
+          <!-- Edit Mode -->
+          <div id="editMode" class="form-grid" style="display: none">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="editName" />
+            </div>
+            <div class="form-group">
+              <label>Staff ID</label>
+              <input type="text" id="editStaffId" disabled />
+            </div>
+            <div class="form-group">
+              <label>on value="Staff">Staff</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="editEmail" />
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" id="editPhone" />
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <select id="editGender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentStaff = null;
+      let allStaff = [];
+      // Detect if running from file:// protocol and use full URL, otherwise use relative
+      const API_BASE =
+        window.location.protocol === "file:"
+          ? "http://localhost:8081/api"
+          : "/api";
+
+      // Load all staff on page load
+      window.addEventListener("DOMContentLoaded", loadAllStaff);
+
+      function showElement(id) {
+        document.getElementById(id).style.display = "block";
+      }
+
+      function hideElement(id) {
+        document.getElementById(id).style.display = "none";
+      }
+
+      async function loadAllStaff() {
+        showElement("loading");
+        hideElement("error");
+        hideElement("staffTable");
+
+        try {
+          const response = await fetch(`${API_BASE}/staff`);
+
+          if (!response.ok) {
+            throw new Error("Failed to load staff");
+          }
+
+          allStaff = await response.json();
+          displayStaffTable(allStaff);
+          hideElement("loading");
+          showElement("staffTable");
+        } catch (error) {
+          hideElement("loading");
+          showError(error.message);
+        }
+      }
+
+      function displayStaffTable(staffList) {
+        const tbody = document.getElementById("staffTableBody");
+        tbody.innerHTML = "";
+
+        document.getElementById("staffCount").textContent = staffList.length;
+
+        staffList.forEach((staff) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td style="font-weight: 500;">${staff.name}</td>
+            <td><span class="position-badge">${staff.position}</span></td>
+            <td style="color: #f5576c;">${staff.email}</td>
+            <td>${staff.phoneNumber}</td>
+            <td>${staff.gender}</td>
+            <td style="text-align: center;">
+              <a href="#" onclick="viewStaffDetail('${staff.email}'); return false;" class="action-btn" style="text-decoration: none; display: inline-block;">👁️ View/Edit</a>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      function viewStaffDetail(email) {
+        sessionStorage.setItem('staffEmail', email);
+        window.location.href = '/staff-detail';
+      }
+
+      async function viewStaff(email) {
+        showElement("staffModal");
+        showElement("modalLoading");
+        hideElement("modalError");
+        hideElement("modalSuccess");
+        hideElement("staffData");
+
+        try {
+          // Find staff by email from the loaded list
+          const staff = allStaff.find((s) => s.email === email);
+
+          if (!staff) {
+            throw new Error("Staff not found");
+          }
+
+          currentStaff = staff;
+          displayStaff(staff);
+          hideElement("modalLoading");
+          showElement("staffData");
+        } catch (error) {
+          hideElement("modalLoading");
+          showModalError(error.message);
+        }
+      }
+
+      function closeModal() {
+        hideElement("staffModal");
+        cancelEdit();
+        // Reload table to show any changes
+        loadAllStaff();
+      }
+
+      function displayStaff(staff) {
+        document.getElementById("displayStaffId").textContent = staff.staffId;
+        document.getElementById("displayPositionBadge").textContent =
+          staff.position;
+        document.getElementById("displayName").textContent = staff.name;
+        document.getElementById("viewNamPositionBadge").textContent =
+          staff.position;
+        document.getElementById("displayName").textContent = staff.name;
+        document.getElementById("viewName").textContent = staff.name
+      }
+
+      function enableEdit() {
+        hideElement("viewMode");
+        hideElement("viewButtons");
+        showElement("editMode");
+        showElement("editButtons");
+        hideElement("modalSuccess");
+
+        document.getElementById("editName").value = currentStaff.name;
+        document.getElementById("editStaffId").value = currentStaff.staffId;
+        document.getElementById("editPosition").value = currentStaff.position;
+        document.getElementById("editPhone").value = currentStaff.phoneNumber;
+        document.getElementById("editGender").value = currentStaff.gender;
+      }
+
+      function cancelEdit() {
+        showElement("viewMode");
+        showElement("viewButtons");
+        hideElement("editMode");
+        hideElement("editButtons");
+      }
+
+      async function saveProfile() {
+        showElement("modalLoading");
+        hideElement("modalError");
+        hideElement("modalSuccess");
+
+        const updatedData = {
+          name: document.getElementById("editName").value,
+          position: document.getElementById("editPosition").value,
+          email: document.getElementById("editEmail").value,
+          phoneNumber: document.getElementById("editPhone").value,
+          gender: document.getElementById("editGender").value,
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/staff/${currentStaff.staffId || currentStaff.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedData),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to update profile");
+          }
+
+          const data = await response.json();
+
+          if (data.staff) {
+            currentStaff = data.staff;
+          } else {
+            currentStaff = { ...currentStaff, ...updatedData };
+          }
+
+          displayStaff(currentStaff);
+          cancelEdit();
+          hideElement("modalLoading");
+          showModalSuccess("Profile updated successfully!");
+
+          setTimeout(() => {
+            hideElement("modalSuccess");
+            closeModal();
+          }, 2000);
+        } catch (error) {
+          hideElement("modalLoading");
+          showModalError(error.message);
+        }
+      }
+
+      function showError(message) {
+        document.getElementById("error").textContent = "❌ " + message;
+        showElement("error");
+      }
+
+      function showModalError(message) {
+        document.getElementById("modalError").textContent = "❌ " + message;
+        showElement("modalError");
+      }
+
+      function showModalSuccess(message) {
+        document.getElementById("modalSuccess").textContent = "✅ " + message;
+        showElement("modalSuccess");
+      }
+    </script>
+  </body>
+</html>
