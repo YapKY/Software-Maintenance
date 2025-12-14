@@ -119,6 +119,26 @@
             border: 2px solid;
             border-radius: 4px;
         }
+        input.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        input.is-valid {
+            border-color: #28a745 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -170,27 +190,45 @@
         </div>
 
         <!-- Passenger Details Form -->
+        <!-- Passenger Details Form -->
         <div class="col-md-5">
             <div class="card p-4">
                 <h4 class="mb-3">Passenger Details</h4>
                 <form id="bookingForm">
                     <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" id="fullName" class="form-control" required>
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" id="fullName" class="form-control" 
+                            placeholder="e.g., John Doe" required
+                            oninput="validateFullName()">
+                        <div class="invalid-feedback" id="fullNameError"></div>
+                        <small class="text-muted">Minimum 2 characters</small>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Passport Number</label>
+                        <label class="form-label">Passport Number <span class="text-danger">*</span></label>
                         <input type="text" id="passport" class="form-control" 
-                               placeholder="A12345678" required>
+                            placeholder="A12345678" required
+                            oninput="validatePassport()" maxlength="9">
+                        <div class="invalid-feedback" id="passportError"></div>
+                        <small class="text-muted">Format: One uppercase letter + 8 digits (e.g., A12345678)</small>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Email (For Ticket)</label>
-                        <input type="email" id="email" class="form-control" required>
+                        <label class="form-label">Email (For Ticket) <span class="text-danger">*</span></label>
+                        <input type="email" id="email" class="form-control" 
+                            placeholder="john@example.com" required
+                            oninput="validateEmail()">
+                        <div class="invalid-feedback" id="emailError"></div>
+                        <small class="text-muted">Valid email address required</small>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
+                        <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                         <input type="text" id="phone" class="form-control" 
-                               placeholder="012-3456789" required>
+                            placeholder="012-3456789" required
+                            oninput="validatePhone()" maxlength="12">
+                        <div class="invalid-feedback" id="phoneError"></div>
+                        <small class="text-muted">Format: XXX-XXXXXXX (e.g., 012-3456789)</small>
                     </div>
                     
                     <!-- Selected Seat Info -->
@@ -297,7 +335,6 @@
         }
     }
 
-    // ✅ FIXED: Render seats with class differentiation
     function renderSeats(seats) {
         const container = document.getElementById("seat-map-container");
         container.innerHTML = '<div class="seat-grid" id="grid"></div>';
@@ -310,7 +347,6 @@
         seats.forEach(seat => {
             const div = document.createElement("div");
             
-            // ✅ FIXED: Add class based on typeOfSeat
             const seatClass = seat.typeOfSeat === 'Business' ? 'business' : 'economy';
             const statusClass = seat.statusSeat === 'Booked' ? 'booked' : seatClass;
             
@@ -325,7 +361,6 @@
         });
     }
 
-    // ✅ FIXED: Handle seat selection with proper pricing
     function selectSeat(element, seat) {
         document.querySelectorAll('.seat.selected').forEach(el => {
             el.classList.remove('selected');
@@ -344,7 +379,6 @@
         document.getElementById("selectedSeatNumber").value = seat.seatNumber;
         document.getElementById("selectedSeatClass").value = seat.typeOfSeat;
         
-        // ✅ FIXED: Calculate price based on seat type
         let price = 0;
         if (currentFlight) {
             price = seat.typeOfSeat === 'Business' 
@@ -366,19 +400,52 @@
         proceedBtn.innerText = "Proceed to Payment →";
     }
 
+    // ✅ UPDATED: Validate passenger data before proceeding
     function proceedToPayment() {
         const seatId = document.getElementById("selectedSeatId").value;
         if (!seatId) { 
-            alert("Please select a seat!"); 
+            showError("Please select a seat!");
             return; 
         }
 
-        const form = document.getElementById("bookingForm");
-        if (!form.checkValidity()) {
-            form.reportValidity();
+        // Get form values
+        const fullName = document.getElementById("fullName").value.trim();
+        const passport = document.getElementById("passport").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+
+        // ✅ VALIDATION: Full Name
+        if (!fullName || fullName.length < 2) {
+            showError("Please enter a valid full name (at least 2 characters)");
+            document.getElementById("fullName").focus();
             return;
         }
 
+        // ✅ VALIDATION: Passport (must be [A-Z]\d{8} format)
+        const passportRegex = /^[A-Z]\d{8}$/;
+        if (!passportRegex.test(passport)) {
+            showError("Invalid passport format! Must be one uppercase letter followed by 8 digits (e.g., A12345678)");
+            document.getElementById("passport").focus();
+            return;
+        }
+
+        // ✅ VALIDATION: Email
+        const emailRegex = /^[A-Za-z0-9+_.-]+@(.+)$/;
+        if (!emailRegex.test(email)) {
+            showError("Invalid email format! Please enter a valid email address");
+            document.getElementById("email").focus();
+            return;
+        }
+
+        // ✅ VALIDATION: Phone (must be XXX-XXXXXXX format)
+        const phoneRegex = /^\d{3}-\d{7,8}$/;
+        if (!phoneRegex.test(phone)) {
+            showError("Invalid phone format! Must be XXX-XXXXXXX (e.g., 012-3456789)");
+            document.getElementById("phone").focus();
+            return;
+        }
+
+        // All validations passed - proceed with booking
         const bookingData = {
             customerId: CUSTOMER_ID,
             flightId: FLIGHT_ID,
@@ -387,15 +454,45 @@
             seatClass: document.getElementById("selectedSeatClass").value,
             amount: document.getElementById("selectedAmount").value,
             passenger: {
-                fullName: document.getElementById("fullName").value,
-                passportNo: document.getElementById("passport").value,
-                email: document.getElementById("email").value,
-                phoneNumber: document.getElementById("phone").value
+                fullName: fullName,
+                passportNo: passport,
+                email: email,
+                phoneNumber: phone
             }
         };
         
         localStorage.setItem("tempBookingData", JSON.stringify(bookingData));
         window.location.href = "/payment";
+    }
+
+    // ✅ Helper function to show error messages
+    function showError(message) {
+        // Remove existing error if any
+        const existingError = document.getElementById('validationError');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error alert
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'validationError';
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.role = 'alert';
+        errorDiv.innerHTML = `
+            <strong>❌ Validation Error:</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insert before form
+        const form = document.getElementById('bookingForm');
+        form.parentNode.insertBefore(errorDiv, form);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }, 5000);
     }
 
     function formatTime(time) {
@@ -404,6 +501,108 @@
         const period = hours >= 12 ? 'PM' : 'AM';
         const displayHours = hours % 12 || 12;
         return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+    }
+
+    // ✅ Real-time validation functions
+    function validateFullName() {
+        const input = document.getElementById('fullName');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('fullNameError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        if (value.length < 2) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Name must be at least 2 characters';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validatePassport() {
+        const input = document.getElementById('passport');
+        const value = input.value.trim().toUpperCase();
+        const errorDiv = document.getElementById('passportError');
+        
+        input.value = value; // Auto-uppercase
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const passportRegex = /^[A-Z]\d{8}$/;
+        if (!passportRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Invalid format! Must be one letter + 8 digits (e.g., A12345678)';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validateEmail() {
+        const input = document.getElementById('email');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('emailError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const emailRegex = /^[A-Za-z0-9+_.-]+@(.+\..+)$/;
+        if (!emailRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Please enter a valid email address';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validatePhone() {
+        const input = document.getElementById('phone');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('phoneError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const phoneRegex = /^\d{3}-\d{7,8}$/;
+        if (!phoneRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Invalid format! Must be XXX-XXXXXXX (e.g., 012-3456789)';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
     }
 </script>
 </body>

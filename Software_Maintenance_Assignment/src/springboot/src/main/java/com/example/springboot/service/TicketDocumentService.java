@@ -1,6 +1,7 @@
 package com.example.springboot.service;
 
 import com.example.springboot.model.Flight;
+import com.example.springboot.model.Passenger;
 import com.example.springboot.model.Ticket;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -16,6 +17,14 @@ import java.io.ByteArrayOutputStream;
 public class TicketDocumentService {
 
     public byte[] generateTicketPdf(Ticket ticket) throws Exception {
+        // ✅ VALIDATION: Check ticket has required data
+        if (ticket == null) {
+            throw new IllegalArgumentException("Ticket cannot be null");
+        }
+        if (ticket.getBookingReference() == null || ticket.getBookingReference().isEmpty()) {
+            throw new IllegalArgumentException("Ticket must have a booking reference");
+        }
+        
         Document document = new Document();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PdfWriter.getInstance(document, out);
@@ -48,11 +57,15 @@ public class TicketDocumentService {
         document.add(new Paragraph("PASSENGER INFORMATION", headerFont));
         document.add(new Paragraph(" "));
         
+        // ✅ NULL SAFETY: Check if passenger details exist
         if (ticket.getPassengerDetails() != null) {
-            document.add(new Paragraph("Name: " + ticket.getPassengerDetails().getFullName(), normalFont));
-            document.add(new Paragraph("Passport: " + ticket.getPassengerDetails().getPassportNo(), normalFont));
-            document.add(new Paragraph("Email: " + ticket.getPassengerDetails().getEmail(), normalFont));
-            document.add(new Paragraph("Phone: " + ticket.getPassengerDetails().getPhoneNumber(), normalFont));
+            Passenger passenger = ticket.getPassengerDetails();
+            document.add(new Paragraph("Name: " + getOrDefault(passenger.getFullName(), "N/A"), normalFont));
+            document.add(new Paragraph("Passport: " + getOrDefault(passenger.getPassportNo(), "N/A"), normalFont));
+            document.add(new Paragraph("Email: " + getOrDefault(passenger.getEmail(), "N/A"), normalFont));
+            document.add(new Paragraph("Phone: " + getOrDefault(passenger.getPhoneNumber(), "N/A"), normalFont));
+        } else {
+            document.add(new Paragraph("Passenger information not available", normalFont));
         }
 
         document.add(new Paragraph(" "));
@@ -63,16 +76,24 @@ public class TicketDocumentService {
         document.add(new Paragraph("FLIGHT INFORMATION", headerFont));
         document.add(new Paragraph(" "));
 
+        // ✅ NULL SAFETY: Check if flight details exist
         if (ticket.getFlightDetails() != null) {
             Flight flight = ticket.getFlightDetails();
             
-            document.add(new Paragraph("Flight: " + flight.getFlightId() + " (" + flight.getPlaneNo() + ")", normalFont));
-            document.add(new Paragraph("Route: " + flight.getDepartureCountry() + " → " + flight.getArrivalCountry(), normalFont));
+            document.add(new Paragraph("Flight: " + getOrDefault(flight.getFlightId(), "N/A") + 
+                " (" + getOrDefault(flight.getPlaneNo(), "N/A") + ")", normalFont));
+            document.add(new Paragraph("Route: " + getOrDefault(flight.getDepartureCountry(), "N/A") + 
+                " → " + getOrDefault(flight.getArrivalCountry(), "N/A"), normalFont));
             document.add(new Paragraph(" "));
             
-            document.add(new Paragraph("Departure: " + flight.getDepartureDate() + " at " + formatTime(flight.getDepartureTime()), normalFont));
-            document.add(new Paragraph("Arrival: " + flight.getArrivalDate() + " at " + formatTime(flight.getArrivalTime()), normalFont));
+            document.add(new Paragraph("Departure: " + getOrDefault(flight.getDepartureDate(), "N/A") + 
+                " at " + formatTime(flight.getDepartureTime()), normalFont));
+            document.add(new Paragraph("Arrival: " + getOrDefault(flight.getArrivalDate(), "N/A") + 
+                " at " + formatTime(flight.getArrivalTime()), normalFont));
             document.add(new Paragraph("Boarding Time: " + formatTime(flight.getBoardingTime()), normalFont));
+        } else {
+            document.add(new Paragraph("Flight information not available", normalFont));
+            document.add(new Paragraph("Please contact customer service", normalFont));
         }
 
         document.add(new Paragraph(" "));
@@ -82,8 +103,8 @@ public class TicketDocumentService {
         // Seat Information
         document.add(new Paragraph("SEAT INFORMATION", headerFont));
         document.add(new Paragraph(" "));
-        document.add(new Paragraph("Seat Number: " + ticket.getSeatNumberDisplay(), normalFont));
-        document.add(new Paragraph("Class: " + ticket.getSeatClassDisplay(), normalFont));
+        document.add(new Paragraph("Seat Number: " + getOrDefault(ticket.getSeatNumberDisplay(), "N/A"), normalFont));
+        document.add(new Paragraph("Class: " + getOrDefault(ticket.getSeatClassDisplay(), "N/A"), normalFont));
 
         document.add(new Paragraph(" "));
         document.add(new Paragraph("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", smallFont));
@@ -93,19 +114,24 @@ public class TicketDocumentService {
         document.add(new Paragraph("SCAN AT GATE", headerFont));
         document.add(new Paragraph(" "));
 
-        QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        BitMatrix bitMatrix = qrCodeWriter.encode(
-            ticket.getBookingReference(), 
-            BarcodeFormat.QR_CODE, 
-            200, 
-            200
-        );
-        ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
-        
-        Image qrImage = Image.getInstance(pngOutputStream.toByteArray());
-        qrImage.setAlignment(Element.ALIGN_CENTER);
-        document.add(qrImage);
+        try {
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(
+                ticket.getBookingReference(), 
+                BarcodeFormat.QR_CODE, 
+                200, 
+                200
+            );
+            ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+            
+            Image qrImage = Image.getInstance(pngOutputStream.toByteArray());
+            qrImage.setAlignment(Element.ALIGN_CENTER);
+            document.add(qrImage);
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to generate QR code: " + e.getMessage());
+            document.add(new Paragraph("QR Code: " + ticket.getBookingReference(), normalFont));
+        }
 
         document.add(new Paragraph(" "));
         document.add(new Paragraph(" "));
@@ -119,7 +145,19 @@ public class TicketDocumentService {
         return out.toByteArray();
     }
 
+    /**
+     * ✅ Helper method to provide default values for null strings
+     */
+    private String getOrDefault(String value, String defaultValue) {
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
+    /**
+     * ✅ NULL SAFETY: Format time with validation
+     */
     private String formatTime(int time) {
+        if (time == 0) return "N/A";
+        
         int hours = time / 100;
         int minutes = time % 100;
         String period = hours >= 12 ? "PM" : "AM";

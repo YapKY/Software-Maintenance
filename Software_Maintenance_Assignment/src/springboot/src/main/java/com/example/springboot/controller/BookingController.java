@@ -7,6 +7,7 @@ import com.stripe.model.PaymentIntent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import com.example.springboot.strategy.PricingContext;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,8 @@ public class BookingController {
     @Autowired private BookingService bookingService;
     @Autowired private PaymentService paymentService;
     @Autowired private TicketDocumentService ticketDocumentService;
+    @Autowired private PricingContext pricingContext;
+    
 
     // 1. Get Seats
     @GetMapping("/seats/{flightId}")
@@ -81,6 +84,29 @@ public ResponseEntity<?> getSeats(@PathVariable String flightId) {
             return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/price/{seatId}")
+    public ResponseEntity<?> calculatePrice(@PathVariable String seatId) {
+        try {
+            Seat seat = bookingService.getSeatById(seatId);  // You'll need to add this method
+            Flight flight = bookingService.getFlightBySeatId(seatId);  // You'll need this too
+            
+            double calculatedPrice = bookingService.calculateSeatPrice(seat, flight);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "seatId", seatId,
+                "seatClass", seat.getTypeOfSeat(),
+                "price", calculatedPrice,
+                "benefits", pricingContext.getBenefits(seat.getTypeOfSeat())
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Failed to calculate price: " + e.getMessage()
+            ));
         }
     }
 }
