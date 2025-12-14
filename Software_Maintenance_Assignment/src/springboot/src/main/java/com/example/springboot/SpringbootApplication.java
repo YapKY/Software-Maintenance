@@ -1,15 +1,11 @@
 package com.example.springboot;
 
-import com.example.springboot.model.Customer;
-import com.example.springboot.model.Passenger;
-import com.example.springboot.model.Staff;
-import com.example.springboot.repository.CustomerRepository;
-import com.example.springboot.repository.PassengerRepository;
-import com.example.springboot.repository.StaffRepository;
-import org.springframework.boot.CommandLineRunner;
+
+//import com.example.springboot.model.Passenger;
+//import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class SpringbootApplication {
@@ -22,93 +18,5 @@ public class SpringbootApplication {
 	 * Legacy data seeding - loads sample data from original assignment code
 	 * Replicates the hardcoded data initialization from main.java
 	 */
-	@Bean
-	CommandLineRunner initDatabase(CustomerRepository customerRepo,
-			StaffRepository staffRepo,
-			PassengerRepository passengerRepo) {
-		return args -> {
-			System.out.println("========================================");
-			System.out.println("🚀 Airline Booking Legacy System Starting...");
-			System.out.println("========================================");
-
-			// Log current counts for debugging
-			System.out.println("Repo counts at startup -> Customers: " + customerRepo.count()
-					+ ", Staff: " + staffRepo.count() + ", Passengers: " + passengerRepo.count());
-
-			// Check if data already exists to avoid duplicates on restart
-			if (customerRepo.count() == 0) {
-				System.out.println("📝 Seeding Customer data...");
-
-				// Legacy sample customers from main.java
-				Customer cust1 = new Customer("040225-14-1143", "12345678", "KY YAP",
-						"kyyap@gmail.com", "011-0818007", "Male");
-				Customer cust2 = new Customer("010604-04-0453", "87654321", "Felicia Tee",
-						"ftee@gmail.com", "013-6549865", "Female");
-				Customer cust3 = new Customer("030710-10-4325", "12344321", "Nicholas Chin",
-						"nicho@gmail.com", "012-3546857", "Male");
-				Customer cust4 = new Customer("020312-11-6589", "98761234", "Angela Ng",
-						"aangela@gmail.com", "016-7894512", "Female");
-
-				customerRepo.save(cust1);
-				customerRepo.save(cust2);
-				customerRepo.save(cust3);
-				customerRepo.save(cust4);
-
-				System.out.println("✅ Created " + customerRepo.count() + " customers");
-			} else {
-				System.out.println("ℹ️ Customer data already exists (" + customerRepo.count() + " records)");
-			}
-
-			if (staffRepo.count() == 0) {
-				System.out.println("📝 Seeding Staff data...");
-
-				// Legacy sample staff from main.java
-				Staff staff1 = new Staff("S001", "Manager", "11111", "Apple Doe",
-						"018-9956348", "Female", "apple@gmail.com");
-				Staff staff2 = new Staff("S002", "Airline Controller", "22222", "Eric Lo",
-						"014-6587439", "Male", "eric@gmail.com");
-				Staff staff3 = new Staff("S003", "Manager", "33333", "Timothy Tan",
-						"012-4568793", "Male", "ttan@gmail.com");
-
-				staffRepo.save(staff1);
-				staffRepo.save(staff2);
-				staffRepo.save(staff3);
-
-				System.out.println("✅ Created " + staffRepo.count() + " staff members");
-			} else {
-				System.out.println("ℹ️ Staff data already exists (" + staffRepo.count() + " records)");
-			}
-
-			if (passengerRepo.count() == 0) {
-				System.out.println("📝 Seeding Passenger data...");
-
-				// Sample passengers
-				Passenger passenger1 = new Passenger("A12345678", "John Smith",
-						"jsmith@gmail.com", "012-3456789", "Male");
-				Passenger passenger2 = new Passenger("B98765432", "Mary Johnson",
-						"mjohnson@gmail.com", "013-9876543", "Female");
-
-				passengerRepo.save(passenger1);
-				passengerRepo.save(passenger2);
-
-				System.out.println("✅ Created " + passengerRepo.count() + " passengers");
-			} else {
-				System.out.println("ℹ️ Passenger data already exists (" + passengerRepo.count() + " records)");
-			}
-
-			System.out.println("========================================");
-			System.out.println("✨ Legacy Profile Module Ready!");
-			System.out.println("📊 Database Summary:");
-			System.out.println("   - Customers: " + customerRepo.count());
-			System.out.println("   - Staff: " + staffRepo.count());
-			System.out.println("   - Passengers: " + passengerRepo.count());
-			System.out.println("========================================");
-			System.out.println("🌐 API Endpoints available at: http://localhost:8081/api/");
-			System.out.println("   - /api/customers/login");
-			System.out.println("   - /api/customers/register");
-			System.out.println("   - /api/staff/login");
-			System.out.println("   - /api/passengers");
-			System.out.println("========================================");
-		};
-	}
+	
 }

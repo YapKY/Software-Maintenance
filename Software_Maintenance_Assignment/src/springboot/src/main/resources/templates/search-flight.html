@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Flights</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .search-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+        .flight-result {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .flight-result:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+        }
+        .flight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .flight-id {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .price-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .flight-route {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .route-location {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        .route-arrow {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+        .flight-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .detail-item {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .detail-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="search-card">
+        <h2 class="text-center mb-4" style="color: #667eea;">🔍 Search Flights</h2>
+        
+        <!-- Search Form -->
+        <form id="searchForm" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Departure Country</label>
+                <select id="departureCountry" class="form-select" required>
+                    <option value="">Select Country</option>
+                    <option value="Malaysia">Malaysia</option>
+                    <option value="Japan">Japan</option>
+                    <option value="England">England</option>
+                    <option value="China">China</option>
+                    <option value="Australia">Australia</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Arrival Country</label>
+                <select id="arrivalCountry" class="form-select" required>
+                    <option value="">Select Country</option>
+                    <option value="Malaysia">Malaysia</option>
+                    <option value="Japan">Japan</option>
+                    <option value="England">England</option>
+                    <option value="China">China</option>
+                    <option value="Australia">Australia</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Departure Date</label>
+                <input type="text" id="departureDate" class="form-control" 
+                       placeholder="DD/MM/YYYY" required>
+                <small class="text-muted">Format: 11/11/2023</small>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary w-100">
+                    🔍 Search Flights
+                </button>
+            </div>
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Loading State -->
+        <div id="loadingState" style="display: none;" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Searching flights...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+            <h4 class="mb-3">
+                <span id="resultCount">0</span> Flight(s) Found
+            </h4>
+            <div id="flightResults"></div>
+        </div>
+
+        <!-- No Results State -->
+        <div id="noResults" style="display: none;" class="no-results">
+            <p>No flights found matching your criteria.</p>
+            <small>Try adjusting your search parameters.</small>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CUSTOMER_ID =  /*[[${customerId}]]*/"cust-123"; // Replace with actual logged-in customer ID
+
+    // Handle form submission
+    document.getElementById('searchForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const departureCountry = document.getElementById('departureCountry').value;
+        const arrivalCountry = document.getElementById('arrivalCountry').value;
+        const departureDate = document.getElementById('departureDate').value;
+
+        // Validation
+        if (departureCountry === arrivalCountry) {
+            alert('Departure and arrival countries cannot be the same!');
+            return;
+        }
+
+        // Show loading state
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('noResults').style.display = 'none';
+
+        try {
+            const response = await fetch('/api/flights/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    departureCountry,
+                    arrivalCountry,
+                    departureDate
+                })
+            });
+
+            const data = await response.json();
+
+            // Hide loading
+            document.getElementById('loadingState').style.display = 'none';
+
+            if (data.success && data.flights.length > 0) {
+                displayFlights(data.flights);
+            } else {
+                document.getElementById('noResults').style.display = 'block';
+            }
+        } catch (error) {
+            document.getElementById('loadingState').style.display = 'none';
+            alert('Search failed: ' + error.message);
+        }
+    });
+
+    // Display search results
+    function displayFlights(flights) {
+        const resultsSection = document.getElementById('resultsSection');
+        const flightResults = document.getElementById('flightResults');
+        const resultCount = document.getElementById('resultCount');
+
+        resultCount.textContent = flights.length;
+        flightResults.innerHTML = '';
+
+        flights.forEach(flight => {
+            const flightCard = createFlightCard(flight);
+            flightResults.appendChild(flightCard);
+        });
+
+        resultsSection.style.display = 'block';
+    }
+
+    // Create flight card element
+    function createFlightCard(flight) {
+        const card = document.createElement('div');
+        card.className = 'flight-result';
+        card.onclick = () => selectFlight(flight);
+
+        card.innerHTML = `
+            <div class="flight-header">
+                <div class="flight-id">${flight.flightId}</div>
+                <div class="price-badge">From RM ${flight.economyPrice.toFixed(2)}</div>
+            </div>
+
+            <div class="flight-route">
+                <div class="route-location">
+                    ${flight.departureCountry}
+                    <div style="font-size: 0.9rem; color: #666;">${formatTime(flight.departureTime)}</div>
+                </div>
+                <div class="route-arrow">✈️ →</div>
+                <div class="route-location">
+                    ${flight.arrivalCountry}
+                    <div style="font-size: 0.9rem; color: #666;">${formatTime(flight.arrivalTime)}</div>
+                </div>
+            </div>
+
+            <div class="flight-details">
+                <div class="detail-item">
+                    <div class="detail-label">Departure Date</div>
+                    <div class="detail-value">${flight.departureDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Arrival Date</div>
+                    <div class="detail-value">${flight.arrivalDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Boarding Time</div>
+                    <div class="detail-value">${formatTime(flight.boardingTime)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Plane</div>
+                    <div class="detail-value">${flight.planeNo}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Economy</div>
+                    <div class="detail-value">RM ${flight.economyPrice.toFixed(2)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Business</div>
+                    <div class="detail-value">RM ${flight.businessPrice.toFixed(2)}</div>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    // Navigate to booking page with flightId
+    function selectFlight(flight) {
+        // THIS IS THE KEY CONNECTION POINT
+        window.location.href = `/booking?flightId=${flight.flightId}&customerId=${CUSTOMER_ID}`;
+    }
+
+    // Helper function to format time (1300 -> "1:00 PM")
+    function formatTime(time) {
+        const hours = Math.floor(time / 100);
+        const minutes = time % 100;
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+    }
+</script>
+
+</body>
+</html>
