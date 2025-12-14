@@ -1,4 +1,5 @@
 package com.example.springboot;
+
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
@@ -6,9 +7,10 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Configuration
 public class FirestoreConfig {
@@ -16,32 +18,35 @@ public class FirestoreConfig {
     @Bean
     public Firestore firestore() {
         try {
-            // 1. Point to your specific file path
-            // NOTE: Double backslashes (\\) are required for Windows paths in Java
-            // NOTE: Check if you need to add ".json" at the end of this string!
-            String keyPath = "C:\\Users\\WENYEE\\flutter_workplace\\Software-Maintenance\\Software_Maintenance_Assignment\\src\\springboot\\src\\main\\resources\\firebase-service-account.json"; // Add .json here if needed
+            // FIX: Load directly from src/main/resources using ClassPathResource
+            // This works on ANY computer (Windows/Mac/Linux)
+            ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+            
+            // Check if file exists to give a better error message
+            if (!resource.exists()) {
+                throw new IOException("File not found in resources: firebase-service-account.json");
+            }
 
-            FileInputStream serviceAccount = new FileInputStream(keyPath);
+            InputStream serviceAccount = resource.getInputStream();
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .build();
 
-            // 2. Initialize Firebase (only if it hasn't been done yet)
+            // Initialize Firebase only if not already initialized
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
                 System.out.println("✅ Firebase Application Initialized Successfully!");
             }
 
-            // 3. Return the Firestore connection
             return FirestoreClient.getFirestore();
 
         } catch (IOException e) {
-            // This will print the exact reason if the file is not found
-            System.err.println("❌ CRITICAL ERROR: Could not find firebase key file!");
-            System.err.println("Checked path: " + "C:\\Users\\WENYEE... (check code for full path)");
+            System.err.println("❌ CRITICAL ERROR: Could not load firebase-service-account.json");
+            System.err.println("Make sure the file is located at: src/main/resources/firebase-service-account.json");
             e.printStackTrace();
-            return null; // This will stop the app from crashing immediately, but API calls will fail
+            // Throwing an exception here stops the app from starting with a broken state
+            throw new RuntimeException("Failed to initialize Firebase", e);
         }
     }
 }
