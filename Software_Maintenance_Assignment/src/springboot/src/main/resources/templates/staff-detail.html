@@ -237,19 +237,6 @@
         align-items: center;
       }
 
-      .staff-id {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-        text-align: center;
-      }
-
-      .staff-id strong {
-        font-size: 1.2rem;
-      }
-
       .success-message {
         background: #d4edda;
         color: #155724;
@@ -306,9 +293,6 @@
                 <div class="profile-info">
                   <div>
                     <span class="position-badge" id="positionBadge"></span>
-                    <span class="position-badge" style="margin-left: 8px"
-                      >Staff ID: <span id="displayStaffId"></span
-                    ></span>
                   </div>
                   <h2 id="displayName"></h2>
                 </div>
@@ -355,7 +339,7 @@
                 </div>
                 <div class="form-group">
                   <label>Email Address</label>
-                  <input type="email" id="editEmail" />
+                  <input type="email" id="editEmail" disabled />
                 </div>
                 <div class="form-group">
                   <label>Phone Number</label>
@@ -465,7 +449,6 @@
       }
 
       function displayStaff(staff) {
-        document.getElementById("displayStaffId").textContent = staff.staffId;
         document.getElementById("displayName").textContent = staff.name;
         document.getElementById("positionBadge").textContent = staff.position;
         document.getElementById("viewName").textContent = staff.name;

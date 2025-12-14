@@ -127,16 +127,6 @@
         margin-bottom: 8px;
       }
 
-      .customer-badge {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        display: inline-block;
-      }
-
       .button-group {
         display: flex;
         gap: 12px;
@@ -293,10 +283,6 @@
               <div class="profile-title">
                 <div class="profile-icon">👤</div>
                 <div class="profile-info">
-                  <div class="customer-badge">
-                    Customer ID: <span id="displayId"></span> • IC:
-                    <span id="displayIcNo"></span>
-                  </div>
                   <h2 id="displayName"></h2>
                 </div>
               </div>
@@ -342,7 +328,7 @@
                 </div>
                 <div class="form-group">
                   <label>Email Address</label>
-                  <input type="email" id="editEmail" />
+                  <input type="email" id="editEmail" disabled />
                 </div>
                 <div class="form-group">
                   <label>Phone Number</label>
@@ -444,8 +430,6 @@
       }
 
       function displayCustomer(customer) {
-        document.getElementById("displayId").textContent = customer.custId;
-        document.getElementById("displayIcNo").textContent = customer.custIcNo;
         document.getElementById("displayName").textContent = customer.name;
         document.getElementById("viewName").textContent = customer.name;
         document.getElementById("viewEmail").textContent = customer.email;
