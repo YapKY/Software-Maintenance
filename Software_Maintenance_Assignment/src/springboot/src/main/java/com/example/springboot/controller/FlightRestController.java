@@ -30,6 +30,8 @@ public class FlightRestController {
 
     @Autowired
     private FlightService flightService;
+
+    @Autowired
     private Firestore firestore;
     
 
