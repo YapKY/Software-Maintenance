@@ -34,7 +34,7 @@ class FlightControllerTest {
     private FlightService flightService;
 
     @InjectMocks
-    private FlightController flightController;
+    private FlightRestController flightController;
 
     private Flight testFlight;
     private List<Flight> testFlights;

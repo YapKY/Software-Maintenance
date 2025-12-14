@@ -43,14 +43,12 @@ public class FlightRestController {
             List<Flight> flights = flightService.getAllFlights();
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "count", flights.size(),
-                "flights", flights,
-                "message", "Flights retrieved successfully"
+                "flights", flights
             ));
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
                 "success", false,
-                "message", "Failed to retrieve flights: " + e.getMessage()
+                "message", "Failed to fetch flights: " + e.getMessage()
             ));
         }
     }
@@ -59,23 +57,18 @@ public class FlightRestController {
      * Get flight by document ID
      * GET /api/flights/{documentId}
      */
-    @GetMapping("/{documentId}")
-    public ResponseEntity<?> getFlightById(@PathVariable String documentId) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getFlightById(@PathVariable String id) {
         try {
-            Flight flight = flightService.getFlightById(documentId);
+            Flight flight = flightService.getFlightById(id);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "flight", flight
             ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of(
                 "success", false,
                 "message", e.getMessage()
-            ));
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve flight: " + e.getMessage()
             ));
         }
     }
@@ -85,25 +78,32 @@ public class FlightRestController {
      * POST /api/flights/search
      */
     @PostMapping("/search")
-    public ResponseEntity<?> searchFlights(@RequestBody Map<String, String> searchRequest) {
+    public ResponseEntity<?> searchFlights(@RequestBody Map<String, String> searchParams) {
         try {
-            String departureCountry = searchRequest.get("departureCountry");
-            String arrivalCountry = searchRequest.get("arrivalCountry");
-            String departureDate = searchRequest.get("departureDate");
+            String departureCountry = searchParams.get("departureCountry");
+            String arrivalCountry = searchParams.get("arrivalCountry");
+            String departureDate = searchParams.get("departureDate");
 
-            List<Flight> flights = flightService.searchFlights(
-                departureCountry, 
-                arrivalCountry, 
-                departureDate
-            );
+
+            // Validate inputs
+            if (departureCountry == null || arrivalCountry == null || departureDate == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Missing required fields: departureCountry, arrivalCountry, departureDate"
+                ));
+            }
+
+
+            List<Flight> flights = flightService.searchFlights(departureCountry, arrivalCountry, departureDate);
+//             List<Flight> flights = flightService.searchFlights(departureCountry, arrivalCountry, departureDate);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "count", flights.size(),
                 "flights", flights
             ));
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "message", "Search failed: " + e.getMessage()
             ));
@@ -253,7 +253,7 @@ public class FlightRestController {
      * Get flight by Flight ID (e.g., "F001")
      * GET /api/flights/by-id/{flightId}
      */
-    @GetMapping("/by-id/{flightId}")
+    @GetMapping("/by-flight-id/{flightId}")
     public ResponseEntity<?> getFlightByFlightId(@PathVariable String flightId) {
         try {
             Flight flight = flightService.getFlightByFlightId(flightId);
@@ -261,15 +261,10 @@ public class FlightRestController {
                 "success", true,
                 "flight", flight
             ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of(
                 "success", false,
                 "message", e.getMessage()
-            ));
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve flight: " + e.getMessage()
             ));
         }
     }
