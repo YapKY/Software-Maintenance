@@ -1,15 +1,18 @@
 package com.example.springboot.repository;
 
 import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class FirestoreRepository {
 
-    // Make this public so FlightService can access it
+    @Autowired
+    private Firestore firestore; // Inject the Bean managed by Spring
+
+    // Return the injected instance, NOT the static client
     public Firestore getFirestore() {
-        return FirestoreClient.getFirestore();
+        return this.firestore;
     }
 
     // Generic Save

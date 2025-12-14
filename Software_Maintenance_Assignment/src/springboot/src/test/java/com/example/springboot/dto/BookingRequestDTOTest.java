@@ -1,5 +1,6 @@
 package com.example.springboot.dto;
 
+import com.example.springboot.dto.request.BookingRequestDTO;
 import com.example.springboot.model.Passenger;
 import org.junit.jupiter.api.Test;
 

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Login - Airline Ticketing</title>
+    
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="../css/validation.css">
+    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>✈️ Airline Ticketing</h1>
+            <p>Secure Authentication Portal</p>
+        </div>
+
+        <div id="alertSuccess" class="alert alert-success"></div>
+        <div id="alertError" class="alert alert-error"></div>
+
+        <div id="step1-login">
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="loginEmail">Email Address <span style="color: #dc3545;">*</span></label>
+                    <input 
+                        type="email" 
+                        id="loginEmail" 
+                        name="email"
+                        required 
+                        placeholder="your@email.com"
+                        autocomplete="email"
+                        aria-required="true">
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password <span style="color: #dc3545;">*</span></label>
+                    <div class="password-wrapper">
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            name="password"
+                            required 
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                            aria-required="true">
+                        <span class="toggle-password" onclick="togglePassword('loginPassword')" role="button" tabindex="0">👁️</span>
+                    </div>
+                </div>
+
+                <div class="recaptcha-container">
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span id="loginButtonText">Login</span>
+                </button>
+
+                <div class="forgot-password">
+                    <a href="forgot-password.html">Forgot Password?</a>
+                </div>
+            </form>
+
+            <div class="divider"><span>OR</span></div>
+
+            <div class="social-buttons">
+                <button class="social-btn google-btn" onclick="LoginPage.handleGoogleLogin()" type="button">
+                    <span>🔴</span> Continue with Google
+                </button>
+                <button class="social-btn facebook-btn" onclick="LoginPage.handleFacebookLogin()" type="button">
+                    <span>👍</span> Continue with Facebook
+                </button>
+            </div>
+
+            <div class="text-center mt-20">
+                <p>Don't have an account? <a href="register.html">Register here</a></p>
+            </div>
+        </div>
+
+        <div id="step2-mfa" style="display: none;">
+            <div class="text-center mb-20">
+                <h3>Two-Factor Authentication</h3>
+                <p style="color: #666; font-size: 0.9rem;">
+                    Verifying identity for: <br>
+                    <strong id="mfaEmailDisplay" style="color: #333;">user@example.com</strong>
+                </p>
+            </div>
+
+            <form id="mfaForm" novalidate>
+                <div class="form-group">
+                    <label for="mfaCode" class="text-center">Enter 6-Digit Code</label>
+                    <input 
+                        type="text" 
+                        id="mfaCode" 
+                        name="mfaCode"
+                        class="mfa-input" 
+                        maxlength="6" 
+                        pattern="[0-9]{6}" 
+                        placeholder="000000"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Verify Identity
+                </button>
+                
+                <button type="button" class="btn btn-secondary mt-10" onclick="LoginPage.resetView()">
+                    Back to Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/config/config.js"></script>
+    <script src="../js/utils/validation.js"></script>
+    <script src="../js/utils/storage.js"></script>
+    <script src="../js/utils/helpers.js"></script>
+    <script src="../js/api/authApi.js"></script>
+    <script src="../js/pages/login.js"></script>
+    
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = event.currentTarget;
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                field.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>
