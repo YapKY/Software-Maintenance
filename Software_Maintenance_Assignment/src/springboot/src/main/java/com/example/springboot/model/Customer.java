@@ -25,11 +25,11 @@ public class Customer extends Person {
 
     public boolean getValidPassword(String password) {
         // Basic validation: Check if the password has a minimum length
-        if (password.length() >= 8 && password.length() <= 8) {
+        if (password.length() > 8) {
             this.custPassword = password;
             return true;
         } else {
-            System.out.println("         Password must be only 8 characters.");
+            System.out.println("         Password must be more than 8 characters.");
             System.out.printf("\n");
         }
         return false;

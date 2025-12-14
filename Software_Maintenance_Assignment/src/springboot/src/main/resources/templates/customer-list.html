@@ -12,10 +12,10 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: #f9fafb;
         min-height: 100vh;
-        padding: 20px;
       }
 
       #app {
@@ -24,98 +24,148 @@
       }
 
       .header {
-        background: white;
-        padding: 20px 30px;
-        border-radius: 15px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: white;
+        padding: 24px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
       }
 
       .header h1 {
-        color: #667eea;
-        font-size: 2rem;
+        font-size: 1.875rem;
+        font-weight: 700;
+      }
+
+      .header-buttons {
+        display: flex;
+        gap: 12px;
       }
 
       .back-btn {
-        background: #667eea;
+        background: rgba(255, 255, 255, 0.2);
         color: white;
         padding: 10px 20px;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         text-decoration: none;
-        transition: background 0.3s;
+        font-weight: 500;
+        transition: background 0.2s;
+        display: inline-block;
       }
 
       .back-btn:hover {
-        background: #5568d3;
+        background: rgba(255, 255, 255, 0.3);
       }
 
       .content-container {
+        max-width: 1400px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+
+      .card {
         background: white;
-        border-radius: 15px;
-        padding: 40px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 32px;
+        border: 1px solid #e5e7eb;
       }
 
       .loading,
       .error {
         text-align: center;
         padding: 40px;
-        font-size: 1.2rem;
+        font-size: 1.125rem;
+        color: #6b7280;
       }
 
       .error {
-        color: #e74c3c;
+        color: #dc2626;
+      }
+
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .table-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .count-badge {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        margin-top: 20px;
       }
 
-      thead tr {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+      thead {
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
       }
 
       th {
-        padding: 15px;
+        padding: 12px 16px;
         text-align: left;
         font-weight: 600;
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       td {
-        padding: 15px;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #111827;
       }
 
       tbody tr {
-        transition: background 0.3s;
+        transition: background 0.2s;
       }
 
       tbody tr:hover {
-        background: #f9f9f9;
+        background: #f9fafb;
       }
 
       .action-btn {
-        background: #667eea;
+        background: #3b82f6;
         color: white;
         border: none;
         padding: 8px 16px;
         border-radius: 6px;
         cursor: pointer;
-        transition: background 0.3s;
-        font-size: 0.9rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
       }
 
       .action-btn:hover {
-        background: #5568d3;
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
 
       /* Modal Styles */
@@ -126,59 +176,69 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.5);
         z-index: 1000;
         overflow-y: auto;
       }
 
       .modal-content {
         background: white;
-        max-width: 800px;
+        max-width: 900px;
         margin: 50px auto;
-        border-radius: 15px;
-        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         position: relative;
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px 12px 0 0;
       }
 
       .close-btn {
         position: absolute;
-        top: 20px;
-        right: 20px;
-        background: #e74c3c;
+        top: 16px;
+        right: 16px;
+        background: rgba(255, 255, 255, 0.2);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         font-size: 24px;
         cursor: pointer;
         line-height: 1;
+        transition: background 0.2s;
       }
 
       .close-btn:hover {
-        background: #c0392b;
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .modal-body {
+        padding: 32px;
       }
 
       .profile-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 24px;
       }
 
       .profile-title {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 16px;
       }
 
       .profile-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -187,15 +247,26 @@
       }
 
       .profile-title h2 {
-        color: #333;
-        font-size: 1.8rem;
+        color: #111827;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .customer-badge {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 8px;
       }
 
       .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 25px;
-        margin-top: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
       }
 
       .form-group {
@@ -204,148 +275,153 @@
       }
 
       .form-group label {
-        color: #555;
-        font-weight: 600;
+        color: #374151;
+        font-weight: 500;
         margin-bottom: 8px;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
       }
 
-      .form-group input {
-        padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s;
+      .form-group input,
+      .form-group select {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
 
-      .form-group input:focus {
+      .form-group input:focus,
+      .form-group select:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
       }
 
       .form-group input:disabled {
-        background: #f5f5f5;
+        background: #f9fafb;
         cursor: not-allowed;
       }
 
       .view-mode .value {
-        padding: 12px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        color: #333;
-        min-height: 45px;
+        padding: 10px 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+        color: #111827;
+        min-height: 42px;
         display: flex;
         align-items: center;
+        border: 1px solid #e5e7eb;
       }
 
-      .customer-id {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        text-align: center;
+      .button-group {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
       }
 
       .edit-btn,
       .save-btn,
       .cancel-btn {
-        padding: 10px 25px;
+        padding: 10px 20px;
         border: none;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.3s;
-        margin-left: 10px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
       }
 
       .edit-btn {
-        background: #667eea;
+        background: #3b82f6;
         color: white;
       }
 
       .edit-btn:hover {
-        background: #5568d3;
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
 
       .save-btn {
-        background: #27ae60;
+        background: #10b981;
         color: white;
       }
 
       .save-btn:hover {
-        background: #229954;
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
 
       .cancel-btn {
-        background: #e74c3c;
+        background: #6b7280;
         color: white;
       }
 
       .cancel-btn:hover {
-        background: #c0392b;
+        background: #4b5563;
       }
 
       .success-message {
-        background: #d4edda;
-        color: #155724;
-        padding: 15px;
+        background: #d1fae5;
+        color: #065f46;
+        padding: 16px;
         border-radius: 8px;
         margin-bottom: 20px;
         text-align: center;
-        border: 1px solid #c3e6cb;
+        border: 1px solid #a7f3d0;
       }
     </style>
   </head>
   <body>
     <div id="app">
+      <!-- Header -->
       <div class="header">
-        <h1>👥 All Customers</h1>
-        <div>
-          <a href="/" class="back-btn">← Back to Home</a>
-          <a href="/staff-list" class="back-btn" style="margin-left: 10px"
-            >Staff Profiles →</a
-          >
+        <div class="header-content">
+          <h1>👥 All Customers</h1>
+          <div class="header-buttons">
+            <a href="/" class="back-btn">← Back to Home</a>
+            <a href="/staff-list" class="back-btn">Staff Profiles →</a>
+          </div>
         </div>
       </div>
 
+      <!-- Main Content -->
       <div class="content-container">
-        <div id="loading" class="loading" style="display: none">
-          ⏳ Loading customers...
-        </div>
-        <div id="error" class="error" style="display: none"></div>
-
-        <!-- Customer Table -->
-        <div id="customerTable" style="display: none">
-          <div
-            style="
-              margin-bottom: 20px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            "
-          >
-            <h2 style="color: #667eea; margin: 0">📋 Customer List</h2>
-            <div style="color: #666; font-size: 0.9rem">
-              Total: <span id="customerCount">0</span> customers
-            </div>
+        <div class="card">
+          <div id="loading" class="loading" style="display: none">
+            ⏳ Loading customers...
           </div>
+          <div id="error" class="error" style="display: none"></div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>IC Number</th>
-                <th>Gender</th>
-                <th style="text-align: center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="customerTableBody">
-              <!-- Customer rows will be inserted here -->
-            </tbody>
-          </table>
+          <!-- Customer Table -->
+          <div id="customerTable" style="display: none">
+            <div class="table-header">
+              <h2>📋 Customer List</h2>
+              <span class="count-badge">
+                <span id="customerCount">0</span> customers
+              </span>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>IC Number</th>
+                  <th>Gender</th>
+                  <th style="text-align: center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customerTableBody">
+                <!-- Customer rows will be inserted here -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -353,100 +429,100 @@
     <!-- Customer Detail Modal -->
     <div id="customerModal" class="modal">
       <div class="modal-content">
-        <button onclick="closeModal()" class="close-btn">×</button>
-
-        <div id="modalLoading" class="loading" style="display: none">
-          ⏳ Loading...
-        </div>
-        <div id="modalError" class="error" style="display: none"></div>
-        <div
-          id="modalSuccess"
-          class="success-message"
-          style="display: none"
-        ></div>
-
-        <div id="customerData" style="display: none">
-          <div class="customer-id">
-            <strong>Customer ID:</strong> <span id="displayId"></span> |
-            <strong>IC Number:</strong> <span id="displayIcNo"></span>
+        <div class="modal-header">
+          <button onclick="closeModal()" class="close-btn">×</button>
+          <div
+            id="modalLoading"
+            class="loading"
+            style="display: none; color: white"
+          >
+            ⏳ Loading...
           </div>
-
-          <div class="profile-header">
+          <div id="customerData" style="display: none">
             <div class="profile-title">
               <div class="profile-icon">👤</div>
-              <h2 id="displayName"></h2>
+              <div>
+                <div class="customer-badge">
+                  Customer ID: <span id="displayId"></span> • IC:
+                  <span id="displayIcNo"></span>
+                </div>
+                <h2 id="displayName"></h2>
+              </div>
             </div>
-            <div id="viewButtons">
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <div id="modalError" class="error" style="display: none"></div>
+          <div
+            id="modalSuccess"
+            class="success-message"
+            style="display: none"
+          ></div>
+
+          <div id="customerDataBody" style="display: none">
+            <!-- View Mode -->
+            <div id="viewMode" class="form-grid view-mode">
+              <div class="form-group">
+                <label>Full Name</label>
+                <div class="value" id="viewName"></div>
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <div class="value" id="viewEmail"></div>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <div class="value" id="viewPhone"></div>
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <div class="value" id="viewGender"></div>
+              </div>
+              <div class="form-group">
+                <label>IC Number</label>
+                <div class="value" id="viewIcNo"></div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <div id="editMode" class="form-grid" style="display: none">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="editName" />
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="editEmail" />
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="editPhone" />
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <select id="editGender">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>IC Number</label>
+                <input type="text" id="editIcNo" disabled />
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div id="viewButtons" class="button-group">
               <button class="edit-btn" onclick="enableEdit()">
                 ✏️ Edit Profile
               </button>
             </div>
-            <div id="editButtons" style="display: none">
+            <div id="editButtons" class="button-group" style="display: none">
+              <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
               <button class="save-btn" onclick="saveProfile()">
                 💾 Save Changes
               </button>
-              <button class="cancel-btn" onclick="cancelEdit()">
-                ❌ Cancel
-              </button>
-            </div>
-          </div>
-
-          <!-- View Mode -->
-          <div id="viewMode" class="form-grid view-mode">
-            <div class="form-group">
-              <label>Full Name</label>
-              <div class="value" id="viewName"></div>
-            </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <div class="value" id="viewEmail"></div>
-            </div>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <div class="value" id="viewPhone"></div>
-            </div>
-            <div class="form-group">
-              <label>Gender</label>
-              <div class="value" id="viewGender"></div>
-            </div>
-            <div class="form-group">
-              <label>IC Number</label>
-              <div class="value" id="viewIcNo"></div>
-            </div>
-          </div>
-
-          <!-- Edit Mode -->
-          <div id="editMode" class="form-grid" style="display: none">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" id="editName" />
-            </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" id="editEmail" />
-            </div>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input type="tel" id="editPhone" />
-            </div>
-            <div class="form-group">
-              <label>Gender</label>
-              <select
-                id="editGender"
-                style="
-                  padding: 12px;
-                  border: 2px solid #e0e0e0;
-                  border-radius: 8px;
-                  font-size: 1rem;
-                "
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>IC Number</label>
-              <input type="text" id="editIcNo" disabled />
             </div>
           </div>
         </div>
@@ -565,6 +641,7 @@
         document.getElementById("viewPhone").textContent = customer.phoneNumber;
         document.getElementById("viewGender").textContent = customer.gender;
         document.getElementById("viewIcNo").textContent = customer.custIcNo;
+        showElement("customerDataBody");
       }
 
       function enableEdit() {

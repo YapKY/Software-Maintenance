@@ -1,12 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>API Test</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Test - Airline Booking System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: #f9fafb;
+        min-height: 100vh;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: white;
+        padding: 24px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+      }
+
+      .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .container {
+        max-width: 1280px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 32px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 24px;
+      }
+
+      .status {
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 1.125rem;
+        font-weight: 500;
+        text-align: center;
+        margin-bottom: 24px;
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .status.success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .status.error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .results {
+        color: #4b5563;
+        line-height: 1.6;
+      }
+
+      .results h3,
+      .results h4 {
+        color: #111827;
+        font-weight: 600;
+        margin: 20px 0 12px;
+      }
+
+      .results p {
+        margin: 8px 0;
+        padding: 8px 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .results ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .results li {
+        padding: 12px;
+        margin: 8px 0;
+        background: #f9fafb;
+        border-radius: 8px;
+        border-left: 3px solid #10b981;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: #dbeafe;
+        color: #1e40af;
+      }
+    </style>
   </head>
   <body>
-    <h1>API Connection Test</h1>
-    <div id="status">Testing...</div>
-    <div id="results"></div>
+    <div class="header">
+      <div class="header-content">
+        <h1>🔍 API Connection Test</h1>
+        <a href="/" class="back-btn">← Back to Home</a>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="card">
+        <h2 class="card-title">Connection Status</h2>
+        <div id="status" class="status">🔄 Testing API Connection...</div>
+        <div id="results" class="results"></div>
+      </div>
+    </div>
 
     <script>
       const API_BASE =
@@ -30,27 +178,36 @@
             throw new Error(`Staff API returned ${staffResponse.status}`);
           const staff = await staffResponse.json();
 
-          statusDiv.innerHTML = "✅ All APIs Working!";
+          statusDiv.className = "status success";
+          statusDiv.innerHTML = "✅ All APIs Working Successfully!";
           resultsDiv.innerHTML = `
-                    <h3>Results:</h3>
-                    <p>Protocol: ${window.location.protocol}</p>
-                    <p>API Base: ${API_BASE}</p>
-                    <p>✅ Customers: ${customers.length} records</p>
-                    <p>✅ Staff: ${staff.length} records</p>
-                    <h4>Customers:</h4>
-                    <ul>${customers
-                      .map((c) => `<li>${c.name} (${c.email})</li>`)
-                      .join("")}</ul>
-                    <h4>Staff:</h4>
-                    <ul>${staff
-                      .map(
-                        (s) => `<li>${s.name} (${s.email}) - ${s.position}</li>`
-                      )
-                      .join("")}</ul>
-                `;
+            <h3>Connection Details:</h3>
+            <p><strong>Protocol:</strong> ${window.location.protocol}</p>
+            <p><strong>API Base:</strong> ${API_BASE}</p>
+            <p><strong>Customers:</strong> <span class="badge">${
+              customers.length
+            } records</span></p>
+            <p><strong>Staff:</strong> <span class="badge">${
+              staff.length
+            } records</span></p>
+            
+            <h4>✅ Customer Records:</h4>
+            <ul>${customers
+              .map((c) => `<li><strong>${c.name}</strong> — ${c.email}</li>`)
+              .join("")}</ul>
+            
+            <h4>✅ Staff Records:</h4>
+            <ul>${staff
+              .map(
+                (s) =>
+                  `<li><strong>${s.name}</strong> — ${s.email} <span class="badge">${s.position}</span></li>`
+              )
+              .join("")}</ul>
+          `;
         } catch (error) {
-          statusDiv.innerHTML = "❌ Error!";
-          resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+          statusDiv.className = "status error";
+          statusDiv.innerHTML = "❌ Connection Error";
+          resultsDiv.innerHTML = `<p style="color: #991b1b; border-left-color: #dc2626;"><strong>Error:</strong> ${error.message}</p>`;
         }
       }
 

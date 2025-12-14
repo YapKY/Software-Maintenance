@@ -12,129 +12,140 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: #f9fafb;
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
+        padding: 0;
       }
 
-      .container {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        max-width: 900px;
-        width: 100%;
-        padding: 60px;
+      /* Header with gradient */
+      .header-gradient {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        padding: 48px 0;
+        color: white;
+      }
+
+      .header-content {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px;
         text-align: center;
       }
 
       h1 {
-        color: #667eea;
         font-size: 3rem;
-        margin-bottom: 10px;
         font-weight: 700;
+        margin-bottom: 12px;
+        letter-spacing: -0.025em;
       }
 
       .subtitle {
-        color: #666;
-        font-size: 1.2rem;
-        margin-bottom: 50px;
+        color: #dbeafe;
+        font-size: 1.25rem;
+        font-weight: 400;
       }
 
+      /* Main container */
+      .container {
+        max-width: 1280px;
+        margin: -40px auto 0;
+        padding: 0 24px 48px;
+      }
+
+      /* Card grid */
       .card-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 30px;
-        margin-top: 40px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
       }
 
       .profile-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 15px;
-        padding: 40px 30px;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        padding: 32px;
         text-decoration: none;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid #e5e7eb;
       }
 
       .profile-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
       }
 
-      .profile-card.admin {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      .card-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 20px;
       }
 
-      .profile-card.admin:hover {
-        box-shadow: 0 15px 40px rgba(245, 87, 108, 0.4);
-      }
-
-      .icon {
-        font-size: 4rem;
-        margin-bottom: 10px;
+      .profile-card.admin .card-icon {
+        background: linear-gradient(135deg, #ec4899 0%, #be123c 100%);
       }
 
       .card-title {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
         font-weight: 600;
-        margin-bottom: 10px;
+        color: #111827;
+        margin-bottom: 12px;
       }
 
       .card-description {
-        font-size: 1rem;
-        opacity: 0.9;
-        line-height: 1.5;
+        font-size: 0.95rem;
+        color: #6b7280;
+        line-height: 1.6;
       }
 
+      /* Features card */
       .features {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 30px;
-        margin-top: 40px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        padding: 32px;
+        border: 1px solid #e5e7eb;
       }
 
       .features h3 {
-        color: #333;
-        margin-bottom: 20px;
+        color: #111827;
         font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 24px;
       }
 
       .features ul {
         list-style: none;
-        text-align: left;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
       }
 
       .features li {
-        color: #666;
-        padding: 10px;
-        border-left: 3px solid #667eea;
-        padding-left: 15px;
+        color: #4b5563;
+        padding: 12px 16px;
+        border-left: 3px solid #3b82f6;
+        background: #f9fafb;
+        border-radius: 6px;
+        font-size: 0.95rem;
       }
 
       .features li::before {
         content: "✓ ";
-        color: #667eea;
+        color: #3b82f6;
         font-weight: bold;
-        margin-right: 5px;
+        margin-right: 8px;
       }
 
       @media (max-width: 768px) {
-        .container {
-          padding: 30px;
-        }
-
         h1 {
           font-size: 2rem;
         }
@@ -142,17 +153,27 @@
         .card-grid {
           grid-template-columns: 1fr;
         }
+
+        .header-gradient {
+          padding: 32px 0;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>✈️ Airline Booking System</h1>
-      <p class="subtitle">Profile Management Portal</p>
+    <!-- Header Section -->
+    <div class="header-gradient">
+      <div class="header-content">
+        <h1>✈️ Airline Booking System</h1>
+        <p class="subtitle">Profile Management Portal</p>
+      </div>
+    </div>
 
+    <!-- Main Content -->
+    <div class="container">
       <div class="card-grid">
         <a th:href="@{/customer-list}" class="profile-card">
-          <div class="icon">👥</div>
+          <div class="card-icon">👥</div>
           <div class="card-title">Customer List</div>
           <div class="card-description">
             View and manage all customer accounts, search customer information,
@@ -161,7 +182,7 @@
         </a>
 
         <a th:href="@{/staff-list}" class="profile-card admin">
-          <div class="icon">👨‍💼</div>
+          <div class="card-icon">👨‍💼</div>
           <div class="card-title">Staff / Admin List</div>
           <div class="card-description">
             View all staff and admin accounts, manage employee information, and
@@ -180,46 +201,6 @@
           <li>Real-time data validation</li>
           <li>Secure data management</li>
         </ul>
-      </div>
-
-      <div
-        style="
-          text-align: center;
-          margin-top: 30px;
-          padding: 20px;
-          background: white;
-          border-radius: 10px;
-        "
-      >
-        <p style="color: #666; margin-bottom: 10px">Quick Navigation:</p>
-        <a
-          th:href="@{/customer-list}"
-          style="
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-          "
-          >Customer List</a
-        >
-        <a
-          th:href="@{/staff-list}"
-          style="
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-          "
-          >Staff List</a
-        >
       </div>
     </div>
   </body>

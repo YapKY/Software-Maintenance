@@ -52,7 +52,7 @@ public class CustomerService {
 
             // Validate password
             if (!customer.getValidPassword(customer.getCustPassword())) {
-                throw new IllegalArgumentException("Password must be exactly 8 characters");
+                throw new IllegalArgumentException("Password must be more than 8 characters");
             }
 
             // Validate personal information

@@ -12,10 +12,9 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f9fafb;
         min-height: 100vh;
-        padding: 20px;
       }
 
       #app {
@@ -24,108 +23,158 @@
       }
 
       .header {
-        background: white;
-        padding: 20px 30px;
-        border-radius: 15px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #ec4899 0%, #be123c 100%);
+        color: white;
+        padding: 24px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
       }
 
       .header h1 {
-        color: #f5576c;
-        font-size: 2rem;
+        font-size: 1.875rem;
+        font-weight: 700;
+      }
+
+      .header-buttons {
+        display: flex;
+        gap: 12px;
       }
 
       .back-btn {
-        background: #f5576c;
+        background: rgba(255, 255, 255, 0.2);
         color: white;
         padding: 10px 20px;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         text-decoration: none;
-        transition: background 0.3s;
+        font-weight: 500;
+        transition: background 0.2s;
+        display: inline-block;
       }
 
       .back-btn:hover {
-        background: #e04454;
+        background: rgba(255, 255, 255, 0.3);
       }
 
       .content-container {
+        max-width: 1400px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+
+      .card {
         background: white;
-        border-radius: 15px;
-        padding: 40px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 32px;
+        border: 1px solid #e5e7eb;
       }
 
       .loading,
       .error {
         text-align: center;
         padding: 40px;
-        font-size: 1.2rem;
+        font-size: 1.125rem;
+        color: #6b7280;
       }
 
       .error {
-        color: #e74c3c;
+        color: #dc2626;
+      }
+
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .table-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .count-badge {
+        background: #fce7f3;
+        color: #9f1239;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        margin-top: 20px;
       }
 
-      thead tr {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
+      thead {
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
       }
 
       th {
-        padding: 15px;
+        padding: 12px 16px;
         text-align: left;
         font-weight: 600;
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       td {
-        padding: 15px;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #111827;
       }
 
       tbody tr {
-        transition: background 0.3s;
+        transition: background 0.2s;
       }
 
       tbody tr:hover {
-        background: #fff5f8;
+        background: #f9fafb;
       }
 
       .action-btn {
-        background: #f5576c;
+        background: #ec4899;
         color: white;
         border: none;
         padding: 8px 16px;
         border-radius: 6px;
         cursor: pointer;
-        transition: background 0.3s;
-        font-size: 0.9rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
       }
 
       .action-btn:hover {
-        background: #e04454;
+        background: #db2777;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
 
       .position-badge {
         display: inline-block;
         padding: 4px 12px;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
+        background: #fce7f3;
+        color: #9f1239;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
       }
 
       /* Modal Styles */
@@ -311,39 +360,35 @@
   </head>
   <body>
     <div id="app">
+      <!-- Header -->
       <div class="header">
-        <h1>👥 All Staff / Admin</h1>
-        <div>
-          <a href="/" class="back-btn">← Back to Home</a>
-          <a href="/customer-list" class="back-btn" style="margin-left: 10px"
-            >Customer Profiles →</a
-          >
+        <div class="header-content">
+          <h1>👨‍💼 All Staff / Admin</h1>
+          <div class="header-buttons">
+            <a href="/" class="back-btn">← Back to Home</a>
+            <a href="/customer-list" class="back-btn">Customer Profiles →</a>
+          </div>
         </div>
       </div>
 
+      <!-- Main Content -->
       <div class="content-container">
-        <div id="loading" class="loading" style="display: none">
-          ⏳ Loading staff...
-        </div>
-        <div id="error" class="error" style="display: none"></div>
-
-        <!-- Staff Table -->
-        <div id="staffTable" style="display: none">
-          <div
-            style="
-              margin-bottom: 20px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            "
-          >
-            <h2 style="color: #f5576c; margin: 0">📋 Staff List</h2>
-            <div style="color: #666; font-size: 0.9rem">
-              Total: <span id="staffCount">0</span> staff
-            </div>
+        <div class="card">
+          <div id="loading" class="loading" style="display: none">
+            ⏳ Loading staff...
           </div>
+          <div id="error" class="error" style="display: none"></div>
 
-          <table>
+          <!-- Staff Table -->
+          <div id="staffTable" style="display: none">
+            <div class="table-header">
+              <h2>📋 Staff List</h2>
+              <span class="count-badge">
+                <span id="staffCount">0</span> staff
+              </span>
+            </div>
+
+            <table>
             <thead>
               <tr>
                 <th>Name</th>
