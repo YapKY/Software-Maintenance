@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Register - Airline Ticketing</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="../css/validation.css">
+    
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>✈️ Airline Ticketing</h1>
+            <p>Create Your Account</p>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertSuccess" class="alert alert-success"></div>
+        <div id="alertError" class="alert alert-error"></div>
+
+        <!-- Registration Form -->
+        <form id="registerForm" novalidate>
+            <div class="form-group">
+                <label for="regFullName">Full Name <span style="color: #dc3545;">*</span></label>
+                <input 
+                    type="text" 
+                    id="regFullName" 
+                    name="fullName"
+                    required 
+                    placeholder="John Doe"
+                    autocomplete="name"
+                    aria-required="true"
+                    aria-describedby="regFullName-error">
+                <small style="display: block; margin-top: 0.25rem; color: #6c757d;">Minimum 2 characters, letters and spaces only</small>
+            </div>
+
+            <div class="form-group">
+                <label for="regIcNo">IC Number <span style="color: #dc3545;">*</span></label>
+                <input 
+                    type="text" 
+                    id="regIcNo" 
+                    name="custIcNo"
+                    required 
+                    placeholder="XXXXXX-XX-XXXX"
+                    aria-required="true"
+                    aria-describedby="regIcNo-error">
+                <small style="display: block; margin-top: 0.25rem; color: #6c757d;">Format: 990101-14-1234</small>
+            </div>
+
+            <div class="form-group">
+                <label for="regGender">Gender <span style="color: #dc3545;">*</span></label>
+                <select id="regGender" name="gender" required style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; background: white;">
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="regEmail">Email Address <span style="color: #dc3545;">*</span></label>
+                <input 
+                    type="email" 
+                    id="regEmail" 
+                    name="email"
+                    required 
+                    placeholder="your@email.com"
+                    autocomplete="email"
+                    aria-required="true"
+                    aria-describedby="regEmail-error">
+            </div>
+
+            <div class="form-group">
+                <label for="regPhone">Phone Number <span style="color: #dc3545;">*</span></label>
+                <input 
+                    type="tel" 
+                    id="regPhone" 
+                    name="phoneNumber"
+                    required 
+                    placeholder="012-3456789"
+                    autocomplete="tel"
+                    aria-required="true"
+                    aria-describedby="regPhone-error">
+                <small style="display: block; margin-top: 0.25rem; color: #6c757d;">Format: XXX-XXXXXXX or XXX-XXXXXXXX</small>
+            </div>
+
+            <div class="form-group">
+                <label for="regPassword">Password <span style="color: #dc3545;">*</span></label>
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        id="regPassword" 
+                        name="password"
+                        required 
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        aria-required="true"
+                        aria-describedby="regPassword-error passwordStrength">
+                    <span class="toggle-password" onclick="togglePassword('regPassword')" tabindex="0" role="button" aria-label="Toggle password visibility">👁️</span>
+                </div>
+                <div id="passwordStrength" style="display: none;"></div>
+                <small style="display: block; margin-top: 0.25rem; color: #6c757d;">
+                    Must contain: 8+ characters, uppercase, lowercase, number, and special character (@$!%*?&)
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="regConfirmPassword">Confirm Password <span style="color: #dc3545;">*</span></label>
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        id="regConfirmPassword" 
+                        name="confirmPassword"
+                        required 
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        aria-required="true"
+                        aria-describedby="regConfirmPassword-error">
+                    <span class="toggle-password" onclick="togglePassword('regConfirmPassword')" tabindex="0" role="button" aria-label="Toggle password visibility">👁️</span>
+                </div>
+            </div>
+
+            <!-- reCAPTCHA -->
+            <div class="recaptcha-container">
+                <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <span id="registerButtonText">Create Account</span>
+            </button>
+
+            <div class="text-center mt-20">
+                <p style="font-size: 0.875rem; color: #6c757d;">
+                    By creating an account, you agree to our Terms of Service and Privacy Policy
+                </p>
+            </div>
+        </form>
+
+        <div class="text-center mt-20">
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+        </div>
+    </div>
+
+    <!-- JavaScript Files - Load in correct order -->
+    <script src="../js/config/config.js"></script>
+    <script src="../js/utils/validation.js"></script>
+    <script src="../js/utils/storage.js"></script>
+    <script src="../js/utils/helpers.js"></script>
+    <script src="../js/api/authApi.js"></script>
+    <script src="../js/pages/register.js"></script>
+    <script>
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = event.currentTarget;
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.textContent = '🙈';
+                button.setAttribute('aria-label', 'Hide password');
+            } else {
+                field.type = 'password';
+                button.textContent = '👁️';
+                button.setAttribute('aria-label', 'Show password');
+            }
+        }
+        
+        // Handle Enter key on toggle password button
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.toggle-password').forEach(button => {
+                button.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        button.click();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

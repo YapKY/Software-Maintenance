@@ -1,2 +1,5 @@
 /Software_Maintenance_Assignment/nbproject/private/
 /Software_Maintenance_Assignment/build/
+src/main/resources/firebase-service-account.json
+target/classes/application.yml
+target/classes/firebase-service-account.json
