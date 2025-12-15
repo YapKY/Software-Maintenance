@@ -71,7 +71,6 @@ public class FirebaseAdapter {
             String link = firebaseAuth.generatePasswordResetLink(email);
             log.info("Password reset link generated for: {}", email);
             
-            // TODO: In production, integrate with email service
             log.info("Password reset link (LOG ONLY - USE EMAIL SERVICE IN PRODUCTION): {}", link);
             
         } catch (FirebaseAuthException e) {
