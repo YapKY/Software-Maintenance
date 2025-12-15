@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for Flight model
+ * * Tests Module: Flight Model
+ * Coverage: Getters/Setters, validation, constructors
  */
 class FlightTest {
 
@@ -25,6 +27,7 @@ class FlightTest {
         flight.setBusinessPrice(400.00);
         flight.setPlaneNo("PL04");
         flight.setTotalSeats(32);
+        flight.setStatus("ACTIVE");
 
         // Assert
         assertEquals("doc123", flight.getDocumentId());
@@ -40,6 +43,7 @@ class FlightTest {
         assertEquals(400.00, flight.getBusinessPrice());
         assertEquals("PL04", flight.getPlaneNo());
         assertEquals(32, flight.getTotalSeats());
+        assertEquals("ACTIVE", flight.getStatus());
     }
 
     @Test
@@ -52,6 +56,7 @@ class FlightTest {
         assertNull(flight.getFlightId());
         assertEquals(0, flight.getDepartureTime());
         assertEquals(0.0, flight.getEconomyPrice());
+        assertNull(flight.getStatus());
     }
 
     @Test
@@ -76,5 +81,69 @@ class FlightTest {
         // Assert
         assertTrue(flight.getDepartureTime() > flight.getBoardingTime());
         assertTrue(flight.getArrivalTime() > flight.getDepartureTime());
+    }
+
+    @Test
+    void testFlightStatus() {
+        // Arrange & Act
+        Flight flight = new Flight();
+        flight.setStatus("ACTIVE");
+
+        // Assert
+        assertEquals("ACTIVE", flight.getStatus());
+    }
+
+    @Test
+    void testFlightWithAllFields() {
+        // Arrange & Act
+        Flight flight = new Flight();
+        flight.setFlightId("F002");
+        flight.setDepartureCountry("Singapore");
+        flight.setArrivalCountry("Thailand");
+        flight.setDepartureDate("15/12/2024");
+        flight.setArrivalDate("15/12/2024");
+        flight.setDepartureTime(1500);
+        flight.setArrivalTime(1800);
+        flight.setBoardingTime(1400);
+        flight.setEconomyPrice(150.00);
+        flight.setBusinessPrice(300.00);
+        flight.setPlaneNo("PL05");
+        flight.setTotalSeats(28);
+        flight.setStatus("ACTIVE");
+
+        // Assert
+        assertNotNull(flight.getFlightId());
+        assertNotNull(flight.getDepartureCountry());
+        assertNotNull(flight.getArrivalCountry());
+    }
+
+    @Test
+    void testFlightNullValues() {
+        // Arrange & Act
+        Flight flight = new Flight();
+        flight.setFlightId(null);
+        flight.setDepartureCountry(null);
+        flight.setStatus(null);
+
+        // Assert
+        assertNull(flight.getFlightId());
+        assertNull(flight.getDepartureCountry());
+        assertNull(flight.getStatus());
+    }
+
+    @Test
+    void testFlightZeroValues() {
+        // Arrange & Act
+        Flight flight = new Flight();
+        flight.setDepartureTime(0);
+        flight.setArrivalTime(0);
+        flight.setEconomyPrice(0.0);
+        flight.setTotalSeats(0);
+
+        // Assert
+        assertEquals(0, flight.getDepartureTime());
+        assertEquals(0, flight.getArrivalTime());
+        assertEquals(0.0, flight.getEconomyPrice());
+        assertEquals(0, flight.getTotalSeats());
     }
 }
