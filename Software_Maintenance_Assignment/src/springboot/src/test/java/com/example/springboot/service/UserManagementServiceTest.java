@@ -283,8 +283,13 @@ class UserManagementServiceTest {
                 .confirmPassword("differentPassword")
                 .build();
 
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> userManagementService.changePassword(request));
