@@ -21,117 +21,124 @@ import java.util.Date;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
-    
+
     @Value("${jwt.secret}")
     private String jwtSecret;
-    
+
     @Value("${jwt.access.expiration}")
     private Long accessTokenExpiration;
-    
+
     @Value("${jwt.refresh.expiration}")
     private Long refreshTokenExpiration;
-    
+
     private final RefreshTokenRepository refreshTokenRepository;
-    
+
     /**
      * Generate access and refresh tokens
      */
     public JWTResponseDTO generateTokens(String userId, String email, Role role) {
         String accessToken = generateAccessToken(userId, email, role);
         String refreshToken = generateRefreshToken(userId, email, role);
-        
+
         return JWTResponseDTO.builder()
-            .accessToken(accessToken)
-            .refreshToken(refreshToken)
-            .tokenType("Bearer")
-            .expiresIn(accessTokenExpiration / 1000)
-            .role(role)
-            .email(email)
-            .fullName(email)
-            .build();
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(accessTokenExpiration / 1000)
+                .role(role)
+                .email(email)
+                .fullName(email)
+                .build();
     }
-    
+
     private String generateAccessToken(String userId, String email, Role role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
-        
+
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        
+
         return Jwts.builder()
-            .setSubject(userId)  // String ID
-            .claim("email", email)
-            .claim("role", role.name())
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(key, SignatureAlgorithm.HS512)
-            .compact();
+                .setSubject(userId) // String ID
+                .claim("email", email)
+                .claim("role", role.name())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
     }
-    
+
     private String generateRefreshToken(String userId, String email, Role role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
-        
+
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        
+
         return Jwts.builder()
-            .setSubject(userId)  // String ID
-            .claim("email", email)
-            .claim("role", role.name())
-            .claim("type", "refresh")
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(key, SignatureAlgorithm.HS512)
-            .compact();
+                .setSubject(userId) // String ID
+                .claim("email", email)
+                .claim("role", role.name())
+                .claim("type", "refresh")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
     }
-    
+
     public String generateMFASessionToken(String userId, String email, Role role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + 300000); // 5 minutes
-        
+
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        
+
         return Jwts.builder()
-            .setSubject(userId)
-            .claim("email", email)
-            .claim("role", role.name())
-            .claim("type", "mfa_session")
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(key, SignatureAlgorithm.HS512)
-            .compact();
+                .setSubject(userId)
+                .claim("email", email)
+                .claim("role", role.name())
+                .claim("type", "mfa_session")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
     }
-    
+
     public boolean validateToken(String token) {
         try {
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
             Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token);
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
         } catch (JwtException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
             return false;
         }
     }
-    
+
     public String getUserIdFromToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parserBuilder()
-            .setSigningKey(key)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-        return claims.getSubject();  // Returns String ID
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getSubject(); // Returns String ID
     }
-    
+
     public Role getRoleFromToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parserBuilder()
-            .setSigningKey(key)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-        return Role.valueOf(claims.get("role", String.class));
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String roleStr = claims.get("role", String.class);
+        try {
+            return Role.valueOf(roleStr);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            log.warn("Invalid role value '{}' in JWT token, defaulting to USER", roleStr);
+            return Role.USER;
+        }
     }
 }

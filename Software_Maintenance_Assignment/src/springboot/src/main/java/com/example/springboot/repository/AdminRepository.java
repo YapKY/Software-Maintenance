@@ -152,7 +152,15 @@ public class AdminRepository {
 
         admin.setPosition(document.getString("position"));
 
-        admin.setRole(Role.valueOf(document.getString("role")));
+        // Parse role with fallback for legacy/invalid data
+        String roleStr = document.getString("role");
+        try {
+            admin.setRole(Role.valueOf(roleStr));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Handle legacy role values like "Manager" - default to ADMIN
+            log.warn("Invalid role value '{}' for staff {}, defaulting to ADMIN", roleStr, document.getId());
+            admin.setRole(Role.ADMIN);
+        }
         admin.setMfaEnabled(document.getBoolean("mfaEnabled"));
         admin.setAccountLocked(document.getBoolean("accountLocked"));
         admin.setFailedLoginAttempts(document.getLong("failedLoginAttempts").intValue());

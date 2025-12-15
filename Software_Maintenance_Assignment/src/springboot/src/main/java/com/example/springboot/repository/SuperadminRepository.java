@@ -114,10 +114,16 @@ public class SuperadminRepository {
         superadmin.setPassword(document.getString("password"));
         superadmin.setFullName(document.getString("fullName"));
 
-        // Handle role with null safety
+        // Handle role with null safety and fallback for legacy/invalid data
         String roleStr = document.getString("role");
         if (roleStr != null) {
-            superadmin.setRole(Role.valueOf(roleStr));
+            try {
+                superadmin.setRole(Role.valueOf(roleStr));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid role value '{}' for superadmin {}, defaulting to SUPERADMIN", roleStr,
+                        document.getId());
+                superadmin.setRole(Role.SUPERADMIN);
+            }
         } else {
             superadmin.setRole(Role.SUPERADMIN); // Default
         }
