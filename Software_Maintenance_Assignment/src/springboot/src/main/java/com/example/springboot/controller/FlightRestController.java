@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import com.google.cloud.firestore.Firestore;
 
 
+
 /**
  * Flight REST API Controller
  * Handles CRUD operations for flights
@@ -30,7 +31,9 @@ public class FlightRestController {
 
     @Autowired
     private FlightService flightService;
+    @Autowired
     private Firestore firestore;
+    
     
 
     /**
