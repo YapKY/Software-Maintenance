@@ -1,228 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Superadmin Dashboard - Airline Ticketing</title>
-    
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/validation.css">
-</head>
-<body>
+
+    <link rel="stylesheet" href="../css/common.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/validation.css" />
+  </head>
+  <body>
     <nav class="navbar">
-        <h1>✈️ Airline Ticketing - Superadmin Portal</h1>
-        <div class="navbar-right">
-            <div class="user-info">
-                <div class="avatar" id="userAvatar">S</div>
-                <span id="userName">Loading...</span>
-            </div>
-            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      <h1>✈️ Airline Ticketing - Superadmin Portal</h1>
+      <div class="navbar-right">
+        <div class="user-info">
+          <div class="avatar" id="userAvatar">S</div>
+          <span id="userName">Loading...</span>
         </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
     </nav>
 
     <div class="container">
-        <div id="alertSuccess" class="alert alert-success"></div>
-        <div id="alertError" class="alert alert-error"></div>
+      <div id="alertSuccess" class="alert alert-success"></div>
+      <div id="alertError" class="alert alert-error"></div>
 
-        <div id="loadingState" class="loading">
-            <div class="spinner"></div>
-            <p>Loading superadmin dashboard...</p>
+      <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <p>Loading superadmin dashboard...</p>
+      </div>
+
+      <div id="profileSection" class="profile-section" style="display: none">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profileAvatar">S</div>
+          <div class="profile-info">
+            <h2 id="profileName">Superadmin Name</h2>
+            <p id="profileEmail">superadmin@example.com</p>
+            <span class="role-badge superadmin-badge">SUPERADMIN</span>
+          </div>
         </div>
 
-        <div id="profileSection" class="profile-section" style="display: none;">
-            <div class="profile-header">
-                <div class="profile-avatar" id="profileAvatar">S</div>
-                <div class="profile-info">
-                    <h2 id="profileName">Superadmin Name</h2>
-                    <p id="profileEmail">superadmin@example.com</p>
-                    <span class="role-badge superadmin-badge">SUPERADMIN</span>
-                </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Account Type</div>
+            <div class="info-value" id="profileRole">SUPERADMIN</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Total Admins Created</div>
+            <div class="info-value" id="totalAdmins">0</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">MFA Status</div>
+            <div class="info-value" id="mfaStatus">
+              <span class="mfa-status mfa-enabled">Enabled (Required)</span>
             </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Last Login</div>
+            <div class="info-value" id="lastLogin">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Account Created</div>
+            <div class="info-value" id="memberSince">-</div>
+          </div>
+        </div>
+        <div style="margin-top: 20px; text-align: right">
+          <button
+            class="btn btn-secondary"
+            style="width: auto"
+            onclick="showChangePasswordModal()"
+          >
+            Change Password
+          </button>
+        </div>
+      </div>
 
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Account Type</div>
-                    <div class="info-value" id="profileRole">SUPERADMIN</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Total Admins Created</div>
-                    <div class="info-value" id="totalAdmins">0</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">MFA Status</div>
-                    <div class="info-value" id="mfaStatus">
-                        <span class="mfa-status mfa-enabled">Enabled (Required)</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Last Login</div>
-                    <div class="info-value" id="lastLogin">-</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Account Created</div>
-                    <div class="info-value" id="memberSince">-</div>
-                </div>
-            </div>
-            <div style="margin-top: 20px; text-align: right;">
-                 <button class="btn btn-secondary" style="width: auto;" onclick="showChangePasswordModal()">Change Password</button>
-             </div>
+      <div id="dashboardCards" class="dashboard-grid" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">➕</div>
+            <div class="card-title">Create Admin Account</div>
+          </div>
+          <div class="card-content">
+            Create new administrator accounts for system management.
+          </div>
+          <button class="btn btn-primary" onclick="showCreateAdminModal()">
+            Create New Admin
+          </button>
         </div>
 
-        <div id="dashboardCards" class="dashboard-grid" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">➕</div>
-                    <div class="card-title">Create Admin Account</div>
-                </div>
-                <div class="card-content">
-                    Create new administrator accounts for system management.
-                </div>
-                <button class="btn btn-primary" onclick="showCreateAdminModal()">
-                    Create New Admin
-                </button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">👥</div>
-                    <div class="card-title">Manage Admins</div>
-                </div>
-                <div class="card-content">
-                    View and manage all administrator accounts.
-                </div>
-                <div class="card-value" id="totalAdminsCard">0</div>
-                <button class="btn btn-primary" onclick="document.getElementById('adminsListSection').scrollIntoView({behavior: 'smooth'})">
-                    View All Admins
-                </button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">🌐</div>
-                    <div class="card-title">All Users</div>
-                </div>
-                <div class="card-content">
-                    View all users, admins, and superadmins in the system.
-                </div>
-                <button class="btn btn-primary" onclick="viewAllUsers()">
-                    View All Users
-                </button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">⚙️</div>
-                    <div class="card-title">System Configuration</div>
-                </div>
-                <div class="card-content">
-                    Manage system settings and configurations.
-                </div>
-                <button class="btn btn-primary" onclick="viewSystemConfig()">
-                    System Settings
-                </button>
-            </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">👥</div>
+            <div class="card-title">Manage Admins</div>
+          </div>
+          <div class="card-content">
+            View and manage all administrator accounts.
+          </div>
+          <div class="card-value" id="totalAdminsCard">0</div>
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href='/staff-list'"
+          >
+            View All Admins
+          </button>
         </div>
 
-        <div id="adminsListSection" class="admins-list-section" style="display: none;">
-            <h2>Administrator Accounts</h2>
-            <div id="adminsListContainer" class="admins-grid"></div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🌐</div>
+            <div class="card-title">All Users</div>
+          </div>
+          <div class="card-content">View all customers in the system.</div>
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href='/customer-list'"
+          >
+            View All Users
+          </button>
         </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">⚙️</div>
+            <div class="card-title">System Configuration</div>
+          </div>
+          <div class="card-content">
+            Manage system settings and configurations.
+          </div>
+          <button class="btn btn-primary" onclick="viewSystemConfig()">
+            System Settings
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="adminsListSection"
+        class="admins-list-section"
+        style="display: none"
+      >
+        <h2>Administrator Accounts</h2>
+        <div id="adminsListContainer" class="admins-grid"></div>
+      </div>
     </div>
 
-<div id="createAdminModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Create New Staff Account</h2>
-                <span class="close" onclick="hideCreateAdminModal()">&times;</span>
-            </div>
-            
-            <form id="createAdminForm" onsubmit="createAdmin(event)">
-                <div class="form-group">
-                    <label for="adminFullName">Name</label>
-                    <input type="text" id="adminFullName" required placeholder="Staff Name">
-                </div>
-
-                <div class="form-group">
-                    <label for="adminEmail">Email Address</label>
-                    <input type="email" id="adminEmail" required placeholder="staff@example.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="adminGender">Gender</label>
-                    <select id="adminGender" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
-                        <option value="" disabled selected>Select Gender</option>
-                        <option value="MALE">Male</option>
-                        <option value="FEMALE">Female</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="adminPosition">Position</label>
-                    <input type="text" id="adminPosition" required placeholder="e.g. Manager (No digits)">
-                </div>
-
-                <div class="form-group">
-                    <label for="adminPassword">Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="adminPassword" required placeholder="••••••••" minlength="8">
-                        <span class="toggle-password" onclick="togglePassword('adminPassword')" role="button">👁️</span>
-                    </div>
-                    <small>Min 8 chars, uppercase, lowercase, number, special char</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="adminPhone">Phone Number (Optional)</label>
-                    <input type="tel" id="adminPhone" placeholder="012-3456789">
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="hideCreateAdminModal()">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        Create Staff
-                    </button>
-                </div>
-            </form>
+    <div id="createAdminModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Create New Staff Account</h2>
+          <span class="close" onclick="hideCreateAdminModal()">&times;</span>
         </div>
+
+        <form id="createAdminForm" onsubmit="createAdmin(event)">
+          <div class="form-group">
+            <label for="adminFullName">Name</label>
+            <input
+              type="text"
+              id="adminFullName"
+              required
+              placeholder="Staff Name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="adminEmail">Email Address</label>
+            <input
+              type="email"
+              id="adminEmail"
+              required
+              placeholder="staff@example.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="adminGender">Gender</label>
+            <select
+              id="adminGender"
+              required
+              style="
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 10px;
+              "
+            >
+              <option value="" disabled selected>Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="adminPosition">Position</label>
+            <input
+              type="text"
+              id="adminPosition"
+              required
+              placeholder="e.g. Manager (No digits)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="adminPassword">Password</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="adminPassword"
+                required
+                placeholder="••••••••"
+                minlength="8"
+              />
+              <span
+                class="toggle-password"
+                onclick="togglePassword('adminPassword')"
+                role="button"
+                >👁️</span
+              >
+            </div>
+            <small
+              >Min 8 chars, uppercase, lowercase, number, special char</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="adminPhone">Phone Number (Optional)</label>
+            <input type="tel" id="adminPhone" placeholder="012-3456789" />
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="hideCreateAdminModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Create Staff</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Change Password</h2>
-                <span class="close" onclick="hideChangePasswordModal()">&times;</span>
-            </div>
-            
-            <div id="modalAlertError" class="alert alert-error" style="margin: 20px 30px 0 30px;"></div>
-
-            <form id="changePasswordForm">
-                <div class="form-group">
-                    <label>Current Password</label>
-                    <input type="password" id="currentPassword" required>
-                </div>
-                <div class="form-group">
-                    <label>New Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="newPassword" required>
-                        <span class="toggle-password" onclick="togglePassword('newPassword')">👁️</span>
-                    </div>
-                    <div id="passwordStrength" style="display: none;"></div>
-                </div>
-                <div class="form-group">
-                    <label>Confirm New Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="confirmNewPassword" required>
-                        <span class="toggle-password" onclick="togglePassword('confirmNewPassword')">👁️</span>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="hideChangePasswordModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Password</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Change Password</h2>
+          <span class="close" onclick="hideChangePasswordModal()">&times;</span>
         </div>
+
+        <div
+          id="modalAlertError"
+          class="alert alert-error"
+          style="margin: 20px 30px 0 30px"
+        ></div>
+
+        <form id="changePasswordForm">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" id="currentPassword" required />
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="newPassword" required />
+              <span
+                class="toggle-password"
+                onclick="togglePassword('newPassword')"
+                >👁️</span
+              >
+            </div>
+            <div id="passwordStrength" style="display: none"></div>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="confirmNewPassword" required />
+              <span
+                class="toggle-password"
+                onclick="togglePassword('confirmNewPassword')"
+                >👁️</span
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="hideChangePasswordModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Update Password
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script src="../js/config/config.js"></script>
@@ -235,93 +308,94 @@
     <script src="../js/pages/superadminDashboard.js"></script>
 
     <style>
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 5px;
-        }
-        
-        .superadmin-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+      .role-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 5px;
+      }
 
-        .admins-list-section {
-            margin-top: 40px;
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
+      .superadmin-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
 
-        .admins-list-section h2 {
-            margin-bottom: 25px;
-            color: #333;
-        }
+      .admins-list-section {
+        margin-top: 40px;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+      }
 
-        .admins-grid {
-            display: grid;
-            gap: 20px;
-        }
+      .admins-list-section h2 {
+        margin-bottom: 25px;
+        color: #333;
+      }
 
-        .admin-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: #f8f9ff;
-            border-radius: 10px;
-            transition: transform 0.3s;
-        }
+      .admins-grid {
+        display: grid;
+        gap: 20px;
+      }
 
-        .admin-card:hover {
-            transform: translateX(5px);
-        }
+      .admin-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: #f8f9ff;
+        border-radius: 10px;
+        transition: transform 0.3s;
+      }
 
-        .admin-info h4 {
-            margin: 0 0 5px 0;
-            color: #333;
-        }
+      .admin-card:hover {
+        transform: translateX(5px);
+      }
 
-        .admin-info p {
-            margin: 0 0 5px 0;
-            color: #666;
-        }
+      .admin-info h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+      }
 
-        .admin-info small {
-            color: #999;
-        }
+      .admin-info p {
+        margin: 0 0 5px 0;
+        color: #666;
+      }
 
-        /* Show admins list after dashboard loads */
-        #dashboardCards:not([style*="display: none"]) ~ #adminsListSection {
-            display: block;
-        }
+      .admin-info small {
+        color: #999;
+      }
+
+      /* Show admins list after dashboard loads */
+      #dashboardCards:not([style*="display: none"]) ~ #adminsListSection {
+        display: block;
+      }
     </style>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                const totalAdmins = document.getElementById('totalAdmins').textContent;
-                document.getElementById('totalAdminsCard').textContent = totalAdmins;
-            }, 1000);
-        });
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(() => {
+          const totalAdmins =
+            document.getElementById("totalAdmins").textContent;
+          document.getElementById("totalAdminsCard").textContent = totalAdmins;
+        }, 1000);
+      });
 
-        // [UPDATED] Enhanced Toggle Password Function
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const button = event.currentTarget; // Gets the span element that was clicked
-            
-            if (field.type === 'password') {
-                field.type = 'text';
-                button.textContent = '🙈'; // Change icon to "Hide"
-            } else {
-                field.type = 'password';
-                button.textContent = '👁️'; // Change icon to "Show"
-            }
+      // [UPDATED] Enhanced Toggle Password Function
+      function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const button = event.currentTarget; // Gets the span element that was clicked
+
+        if (field.type === "password") {
+          field.type = "text";
+          button.textContent = "🙈"; // Change icon to "Hide"
+        } else {
+          field.type = "password";
+          button.textContent = "👁️"; // Change icon to "Show"
         }
+      }
     </script>
-</body>
+  </body>
 </html>

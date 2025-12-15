@@ -258,10 +258,15 @@
     </div>
 </div>
 
+<script src="/js/config/config.js"></script>
+<script src="/js/utils/storage.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/api/userApi.js"></script>
+
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const FLIGHT_ID = urlParams.get('flightId') || /*[[${flightId}]]*/ "";
-    const CUSTOMER_ID = urlParams.get('customerId') || /*[[${customerId}]]*/ "GUEST";
+    let customerId = urlParams.get('customerId') || /*[[${customerId}]]*/ "GUEST";
 
     let currentFlight = null;
 
@@ -270,6 +275,28 @@
             alert("No flight selected. Redirecting to search page...");
             window.location.href = "/search-flight";
             return;
+        }
+        if (typeof Storage !== 'undefined' && Storage.isAuthenticated()) {
+            try {
+                // We'll use the user dashboard endpoint to get profile info including ID
+                // Note: userApi.js must be included
+                const profile = await UserAPI.getUserDashboard();
+                if (profile && profile.id) {
+                    customerId = profile.id;
+                    console.log("Logged in user detected. Using Customer ID:", customerId);
+                    
+                    // Auto-fill form if passenger data is available
+                    if (profile.fullName) document.getElementById("fullName").value = profile.fullName;
+                    if (profile.email) document.getElementById("email").value = profile.email;
+                    if (profile.phoneNumber) document.getElementById("phone").value = profile.phoneNumber;
+                    // Trigger validation to update UI state
+                    validateFullName();
+                    validateEmail();
+                    validatePhone();
+                }
+            } catch (e) {
+                console.warn("Failed to fetch user profile for booking:", e);
+            }
         }
         try {
             await loadFlightInfo();
@@ -361,6 +388,8 @@
         });
     }
 
+    
+
     function selectSeat(element, seat) {
         document.querySelectorAll('.seat.selected').forEach(el => {
             el.classList.remove('selected');
@@ -447,7 +476,7 @@
 
         // All validations passed - proceed with booking
         const bookingData = {
-            customerId: CUSTOMER_ID,
+            customerId: customerId, // ✅ USE THE DYNAMIC VARIABLE
             flightId: FLIGHT_ID,
             seatId: seatId,
             seatNumber: document.getElementById("selectedSeatNumber").value,

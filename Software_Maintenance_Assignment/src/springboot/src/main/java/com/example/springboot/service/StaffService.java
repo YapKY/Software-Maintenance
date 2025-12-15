@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -24,24 +25,52 @@ public class StaffService {
      * Validates staffId and password combination
      * Matches legacy Staff.login() method
      * 
-     * @param staffId The staff ID (e.g., "S001")
+     * @param staffId  The staff ID (e.g., "S001")
      * @param password The password as integer (e.g., 11111)
      * @return Staff object if authentication successful, null otherwise
      */
     public Staff authenticate(String staffId, int password) {
         // Find staff by ID
         Staff staff = staffRepository.findByStaffId(staffId);
-        
+
         if (staff == null) {
             return null; // Staff ID not found
         }
-        
+
         // Validate password using Staff model's method
         if (staff.login(staffId, password)) {
             return staff; // Authentication successful
         }
-        
+
         return null; // Invalid password
+    }
+
+    /**
+     * Authenticate staff (alias for authenticate)
+     */
+    public Optional<Staff> authenticateStaff(String staffId, String password) {
+        try {
+            int passwordInt = Integer.parseInt(password);
+            Staff staff = authenticate(staffId, passwordInt);
+            return Optional.ofNullable(staff);
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Create staff (alias for addStaff)
+     */
+    public Staff createStaff(Staff staff) {
+        return addStaff(staff);
+    }
+
+    /**
+     * Get staff by document ID (alias for getStaffByStaffId)
+     */
+    public Optional<Staff> getStaffById(String id) {
+        Staff staff = getStaffByStaffId(id);
+        return Optional.ofNullable(staff);
     }
 
     /**
@@ -134,8 +163,8 @@ public class StaffService {
         }
 
         // Validation 8: Position must be valid
-        if (!staff.getPosition().equals("Manager") && 
-            !staff.getPosition().equals("Airline Controller")) {
+        if (!staff.getPosition().equals("Manager") &&
+                !staff.getPosition().equals("Airline Controller")) {
             throw new IllegalArgumentException("Position must be either 'Manager' or 'Airline Controller'");
         }
 
@@ -146,16 +175,16 @@ public class StaffService {
     /**
      * Update staff information
      * 
-     * @param staffId The staff ID to update
+     * @param staffId      The staff ID to update
      * @param updatedStaff The updated staff object
      * @return The updated staff
      * @throws ExecutionException
      * @throws InterruptedException
      * @throws IllegalArgumentException if staff not found
      */
-    public Staff updateStaff(String staffId, Staff updatedStaff) 
+    public Staff updateStaff(String staffId, Staff updatedStaff)
             throws ExecutionException, InterruptedException {
-        
+
         // Check if staff exists
         Staff existingStaff = staffRepository.findByStaffId(staffId);
         if (existingStaff == null) {
@@ -167,15 +196,31 @@ public class StaffService {
             if (!updatedStaff.getStfPass().matches("\\d{5}")) {
                 throw new IllegalArgumentException("Password must be exactly 5 digits");
             }
+            existingStaff.setStfPass(updatedStaff.getStfPass());
         }
 
-        // Update fields
-        updatedStaff.setStaffId(staffId); // Ensure staffId doesn't change
-        updatedStaff.setDocumentId(staffId); // Firestore document ID
-        
-        staffRepository.update(staffId, updatedStaff);
-        
-        return updatedStaff;
+        // Merge only non-null fields from updatedStaff into existingStaff
+        if (updatedStaff.getName() != null && !updatedStaff.getName().isEmpty()) {
+            existingStaff.setName(updatedStaff.getName());
+        }
+        // Phone number can be null for staff
+        if (updatedStaff.getPhoneNumber() != null) {
+            if (updatedStaff.getPhoneNumber().isEmpty()) {
+                existingStaff.setPhoneNumber(null);
+            } else {
+                existingStaff.setPhoneNumber(updatedStaff.getPhoneNumber());
+            }
+        }
+        if (updatedStaff.getGender() != null && !updatedStaff.getGender().isEmpty()) {
+            existingStaff.setGender(updatedStaff.getGender());
+        }
+        if (updatedStaff.getPosition() != null && !updatedStaff.getPosition().isEmpty()) {
+            existingStaff.setPosition(updatedStaff.getPosition());
+        }
+
+        staffRepository.update(staffId, existingStaff);
+
+        return existingStaff;
     }
 
     /**
@@ -209,16 +254,16 @@ public class StaffService {
     /**
      * Change staff password
      * 
-     * @param staffId The staff ID
+     * @param staffId     The staff ID
      * @param oldPassword The current password (for verification)
      * @param newPassword The new password
      * @throws ExecutionException
      * @throws InterruptedException
      * @throws IllegalArgumentException if validation fails
      */
-    public void changePassword(String staffId, int oldPassword, String newPassword) 
+    public void changePassword(String staffId, int oldPassword, String newPassword)
             throws ExecutionException, InterruptedException {
-        
+
         // Authenticate with old password first
         Staff staff = authenticate(staffId, oldPassword);
         if (staff == null) {
@@ -265,24 +310,34 @@ public class StaffService {
         System.out.println("📝 Initializing default staff members from legacy system...");
 
         // Create default staff from legacy system (main.java lines 97-106)
-        // Original: staffArray[0] = new Staff("S001", "Manager", 11111, "Apple Doe", "015-5555555", "MALE", "john@example.com");
+        // Original: staffArray[0] = new Staff("S001", "Manager", 11111, "Apple Doe",
+        // "015-5555555", "MALE", "john@example.com");
         Staff[] defaultStaff = {
-            new Staff("S001", "Manager", "11111", "Apple Doe", "015-5555555", "MALE", "john@example.com"),
-            new Staff("S002", "Airline Controller", "22222", "Bun Smith", "012-345678", "FEMALE", "jane@example.com"),
-            new Staff("S003", "Airline Controller", "33333", "Cookies Johnson", "014-567890", "MALE", "bob@example.com"),
-            new Staff("S004", "Airline Controller", "44444", "Duck Brown", "019-7899908", "FEMALE", "alice@example.com"),
-            new Staff("S005", "Airline Controller", "55555", "Egg Lee", "013-2727589", "MALE", "eva@example.com"),
-            new Staff("S006", "Airline Controller", "66666", "Fruit Chan", "019-9999999", "FEMALE", "owom@example.com"),
-            new Staff("S007", "Airline Controller", "77777", "Grass wong", "018-7976902", "MALE", "pema@example.com"),
-            new Staff("S008", "Airline Controller", "88888", "Ham chan", "017-7787960", "FEMALE", "sosy@example.com"),
-            new Staff("S009", "Airline Controller", "99999", "Ice loo", "0197891111", "MALE", "kokonut@example.com"),
-            new Staff("S000", "Airline Controller", "00000", "Juice hee", "014-4444444", "FEMALE", "polipo@example.com")
+                new Staff("S001", "Manager", "11111", "Apple Doe", "015-5555555", "MALE", "john@example.com"),
+                new Staff("S002", "Airline Controller", "22222", "Bun Smith", "012-345678", "FEMALE",
+                        "jane@example.com"),
+                new Staff("S003", "Airline Controller", "33333", "Cookies Johnson", "014-567890", "MALE",
+                        "bob@example.com"),
+                new Staff("S004", "Airline Controller", "44444", "Duck Brown", "019-7899908", "FEMALE",
+                        "alice@example.com"),
+                new Staff("S005", "Airline Controller", "55555", "Egg Lee", "013-2727589", "MALE", "eva@example.com"),
+                new Staff("S006", "Airline Controller", "66666", "Fruit Chan", "019-9999999", "FEMALE",
+                        "owom@example.com"),
+                new Staff("S007", "Airline Controller", "77777", "Grass wong", "018-7976902", "MALE",
+                        "pema@example.com"),
+                new Staff("S008", "Airline Controller", "88888", "Ham chan", "017-7787960", "FEMALE",
+                        "sosy@example.com"),
+                new Staff("S009", "Airline Controller", "99999", "Ice loo", "0197891111", "MALE",
+                        "kokonut@example.com"),
+                new Staff("S000", "Airline Controller", "00000", "Juice hee", "014-4444444", "FEMALE",
+                        "polipo@example.com")
         };
 
         for (Staff staff : defaultStaff) {
             try {
                 staffRepository.save(staff);
-                System.out.println("   ✓ Created staff: " + staff.getStaffId() + " - " + staff.getName() + " (" + staff.getPosition() + ")");
+                System.out.println("   ✓ Created staff: " + staff.getStaffId() + " - " + staff.getName() + " ("
+                        + staff.getPosition() + ")");
             } catch (Exception e) {
                 System.err.println("   ✗ Failed to create staff " + staff.getStaffId() + ": " + e.getMessage());
             }
