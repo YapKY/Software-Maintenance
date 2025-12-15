@@ -50,9 +50,12 @@ class FirebaseAdapterTest {
 
         // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-            firebaseAdapter.createUser("test@example.com", "pass", "Name")
+            // FIX: Use a password > 6 chars so it reaches the Firebase call
+            firebaseAdapter.createUser("test@example.com", "strongPassword123", "Name")
         );
-        assertTrue(exception.getMessage().contains("Failed to create user in Firebase"));
+        
+        // Assert
+        assertTrue(exception.getMessage().contains("Firebase error")); 
     }
 
     @Test

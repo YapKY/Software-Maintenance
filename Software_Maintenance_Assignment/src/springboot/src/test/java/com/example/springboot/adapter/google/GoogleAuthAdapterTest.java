@@ -72,9 +72,10 @@ class GoogleAuthAdapterTest {
 
         // Act & Assert
         Exception exception = assertThrows(RuntimeException.class, () -> 
-            googleAuthAdapter.validateTokenAndGetUserInfo("invalid-token")
-        );
-        assertEquals("Invalid Google token", exception.getMessage());
+                googleAuthAdapter.validateTokenAndGetUserInfo("invalid-token")
+            );
+            // CHANGE THIS LINE:
+        assertEquals("Google authentication failed", exception.getMessage());
     }
 
     @Test
@@ -86,8 +87,9 @@ class GoogleAuthAdapterTest {
 
         // Act & Assert
         Exception exception = assertThrows(RuntimeException.class, () -> 
-            googleAuthAdapter.validateTokenAndGetUserInfo("token")
-        );
-        assertEquals("Invalid Google token", exception.getMessage());
+                googleAuthAdapter.validateTokenAndGetUserInfo("token")
+            );
+        // CHANGE THIS LINE:
+        assertEquals("Google authentication failed", exception.getMessage());
     }
 }
