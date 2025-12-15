@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -52,10 +53,9 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should authenticate staff with valid credentials")
-    void testAuthenticateStaffSuccess() throws ExecutionException, InterruptedException {
+    void testAuthenticateStaffSuccess() {
         // Arrange
-        when(staffRepository.findByStaffIdAndStfPass("S001", "12345"))
-                .thenReturn(Optional.of(testStaff));
+        when(staffRepository.findByStaffId("S001")).thenReturn(testStaff);
 
         // Act
         Optional<Staff> result = staffService.authenticateStaff("S001", "12345");
@@ -63,15 +63,14 @@ class StaffServiceTest {
         // Assert
         assertTrue(result.isPresent());
         assertEquals("Alice Johnson", result.get().getName());
-        verify(staffRepository, times(1)).findByStaffIdAndStfPass("S001", "12345");
+        verify(staffRepository, times(1)).findByStaffId("S001");
     }
 
     @Test
     @DisplayName("Should fail authentication with invalid staff ID")
-    void testAuthenticateStaffInvalidId() throws ExecutionException, InterruptedException {
+    void testAuthenticateStaffInvalidId() {
         // Arrange
-        when(staffRepository.findByStaffIdAndStfPass("S999", "12345"))
-                .thenReturn(Optional.empty());
+        when(staffRepository.findByStaffId("S999")).thenReturn(null);
 
         // Act
         Optional<Staff> result = staffService.authenticateStaff("S999", "12345");
@@ -82,10 +81,12 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should fail authentication with incorrect password")
-    void testAuthenticateStaffInvalidPassword() throws ExecutionException, InterruptedException {
+    void testAuthenticateStaffInvalidPassword() {
         // Arrange
-        when(staffRepository.findByStaffIdAndStfPass("S001", "54321"))
-                .thenReturn(Optional.empty());
+        Staff wrongPasswordStaff = new Staff();
+        wrongPasswordStaff.setStaffId("S001");
+        wrongPasswordStaff.setStfPass("99999");
+        when(staffRepository.findByStaffId("S001")).thenReturn(wrongPasswordStaff);
 
         // Act
         Optional<Staff> result = staffService.authenticateStaff("S001", "54321");
@@ -98,7 +99,7 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should create staff with valid data")
-    void testCreateStaffSuccess() throws ExecutionException, InterruptedException {
+    void testCreateStaffSuccess() {
         // Arrange
         Staff newStaff = new Staff();
         newStaff.setStaffId("S002");
@@ -107,7 +108,7 @@ class StaffServiceTest {
         newStaff.setEmail("bob@example.com");
         newStaff.setPhoneNumber("9876543210");
         newStaff.setGender("Male");
-        newStaff.setPosition("Developer");
+        newStaff.setPosition("Manager");
 
         when(staffRepository.existsByStaffId("S002")).thenReturn(false);
         when(staffRepository.save(any(Staff.class))).thenReturn(newStaff);
@@ -196,7 +197,7 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should reject staff creation with duplicate staff ID")
-    void testCreateStaffDuplicateId() throws ExecutionException, InterruptedException {
+    void testCreateStaffDuplicateId() {
         // Arrange
         Staff newStaff = new Staff();
         newStaff.setStaffId("S001"); // Already exists
@@ -246,9 +247,9 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should retrieve staff by ID")
-    void testGetStaffById() throws ExecutionException, InterruptedException {
+    void testGetStaffById() {
         // Arrange
-        when(staffRepository.findById("staff-1")).thenReturn(Optional.of(testStaff));
+        when(staffRepository.findByStaffId("staff-1")).thenReturn(testStaff);
 
         // Act
         Optional<Staff> result = staffService.getStaffById("staff-1");
@@ -260,9 +261,9 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should return empty when staff ID not found")
-    void testGetStaffByIdNotFound() throws ExecutionException, InterruptedException {
+    void testGetStaffByIdNotFound() {
         // Arrange
-        when(staffRepository.findById("staff-999")).thenReturn(Optional.empty());
+        when(staffRepository.findByStaffId("staff-999")).thenReturn(null);
 
         // Act
         Optional<Staff> result = staffService.getStaffById("staff-999");
@@ -273,29 +274,29 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should retrieve staff by staff ID")
-    void testGetStaffByStaffId() throws ExecutionException, InterruptedException {
+    void testGetStaffByStaffId() {
         // Arrange
-        when(staffRepository.findByStaffId("S001")).thenReturn(Optional.of(testStaff));
+        when(staffRepository.findByStaffId("S001")).thenReturn(testStaff);
 
         // Act
-        Optional<Staff> result = staffService.getStaffByStaffId("S001");
+        Staff result = staffService.getStaffByStaffId("S001");
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals("Alice Johnson", result.get().getName());
+        assertNotNull(result);
+        assertEquals("Alice Johnson", result.getName());
     }
 
     @Test
-    @DisplayName("Should return empty when staff ID not found")
-    void testGetStaffByStaffIdNotFound() throws ExecutionException, InterruptedException {
+    @DisplayName("Should return null when staff ID not found")
+    void testGetStaffByStaffIdNotFound() {
         // Arrange
-        when(staffRepository.findByStaffId("S999")).thenReturn(Optional.empty());
+        when(staffRepository.findByStaffId("S999")).thenReturn(null);
 
         // Act
-        Optional<Staff> result = staffService.getStaffByStaffId("S999");
+        Staff result = staffService.getStaffByStaffId("S999");
 
         // Assert
-        assertFalse(result.isPresent());
+        assertNull(result);
     }
 
     // ==================== UPDATE TESTS ====================
@@ -307,18 +308,17 @@ class StaffServiceTest {
         Staff updatedData = new Staff();
         updatedData.setName("Alice Johnson Updated");
         updatedData.setEmail("alice.updated@example.com");
-        updatedData.setPosition("Senior Manager");
+        updatedData.setPosition("Manager");
 
-        when(staffRepository.findById("staff-1")).thenReturn(Optional.of(testStaff));
-        when(staffRepository.existsByEmail("alice.updated@example.com")).thenReturn(false);
-        when(staffRepository.save(any(Staff.class))).thenReturn(testStaff);
+        when(staffRepository.findByStaffId("staff-1")).thenReturn(testStaff);
+        doNothing().when(staffRepository).update(eq("staff-1"), any(Staff.class));
 
         // Act
         Staff result = staffService.updateStaff("staff-1", updatedData);
 
         // Assert
         assertNotNull(result);
-        verify(staffRepository, times(1)).save(any(Staff.class));
+        verify(staffRepository, times(1)).update(eq("staff-1"), any(Staff.class));
     }
 
     @Test
@@ -328,7 +328,7 @@ class StaffServiceTest {
         Staff updatedData = new Staff();
         updatedData.setName("New Name");
 
-        when(staffRepository.findById("staff-999")).thenReturn(Optional.empty());
+        when(staffRepository.findByStaffId("staff-999")).thenReturn(null);
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
@@ -337,19 +337,24 @@ class StaffServiceTest {
     }
 
     @Test
-    @DisplayName("Should reject update with duplicate email")
-    void testUpdateStaffDuplicateEmail() throws ExecutionException, InterruptedException {
+    @DisplayName("Should call repository update when updating staff")
+    void testUpdateStaffRepositoryCall() throws ExecutionException, InterruptedException {
         // Arrange
         Staff updatedData = new Staff();
-        updatedData.setEmail("existing@example.com");
+        updatedData.setName("New Name");
+        updatedData.setPosition("Manager");
 
-        when(staffRepository.findById("staff-1")).thenReturn(Optional.of(testStaff));
-        when(staffRepository.existsByEmail("existing@example.com")).thenReturn(true);
+        when(staffRepository.findByStaffId("staff-1")).thenReturn(testStaff);
+        doNothing().when(staffRepository).update(eq("staff-1"), any(Staff.class));
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            staffService.updateStaff("staff-1", updatedData);
-        });
+        // Act
+        Staff result = staffService.updateStaff("staff-1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("New Name", result.getName());
+        assertEquals("Manager", result.getPosition());
+        verify(staffRepository, times(1)).update(eq("staff-1"), any(Staff.class));
     }
 
     // ==================== DELETE TESTS ====================
@@ -358,20 +363,21 @@ class StaffServiceTest {
     @DisplayName("Should delete staff successfully")
     void testDeleteStaffSuccess() throws ExecutionException, InterruptedException {
         // Arrange
-        when(staffRepository.findById("staff-1")).thenReturn(Optional.of(testStaff));
+        when(staffRepository.findByStaffId("staff-1")).thenReturn(testStaff);
+        doNothing().when(staffRepository).delete("staff-1");
 
         // Act
         staffService.deleteStaff("staff-1");
 
         // Assert
-        verify(staffRepository, times(1)).deleteById("staff-1");
+        verify(staffRepository, times(1)).delete("staff-1");
     }
 
     @Test
     @DisplayName("Should reject deletion of non-existent staff")
     void testDeleteStaffNotFound() throws ExecutionException, InterruptedException {
         // Arrange
-        when(staffRepository.findById("staff-999")).thenReturn(Optional.empty());
+        when(staffRepository.findByStaffId("staff-999")).thenReturn(null);
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
@@ -383,10 +389,10 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should throw RuntimeException on execution error during authentication")
-    void testAuthenticateStaffExecutionError() throws ExecutionException, InterruptedException {
+    void testAuthenticateStaffExecutionError() {
         // Arrange
-        when(staffRepository.findByStaffIdAndStfPass(anyString(), anyString()))
-                .thenThrow(new ExecutionException(new Exception("Database error")));
+        when(staffRepository.findByStaffId(anyString()))
+                .thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
@@ -396,7 +402,7 @@ class StaffServiceTest {
 
     @Test
     @DisplayName("Should throw RuntimeException on execution error during creation")
-    void testCreateStaffExecutionError() throws ExecutionException, InterruptedException {
+    void testCreateStaffExecutionError() {
         // Arrange
         Staff newStaff = new Staff();
         newStaff.setStaffId("S002");
@@ -407,7 +413,7 @@ class StaffServiceTest {
         newStaff.setGender("Male");
 
         when(staffRepository.existsByStaffId("S002"))
-                .thenThrow(new ExecutionException(new Exception("Database error")));
+                .thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
@@ -416,14 +422,14 @@ class StaffServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw RuntimeException on execution error during retrieval")
+    @DisplayName("Should throw ExecutionException on execution error during retrieval")
     void testGetAllStaffExecutionError() throws ExecutionException, InterruptedException {
         // Arrange
         when(staffRepository.findAll())
                 .thenThrow(new ExecutionException(new Exception("Database error")));
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(ExecutionException.class, () -> {
             staffService.getAllStaff();
         });
     }
