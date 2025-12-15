@@ -18,8 +18,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,38 +31,31 @@ class AuthControllerTest {
 
     private MockMvc mockMvc;
 
-    @Mock
-    private AuthExecutionService authExecutionService;
+    @Mock private AuthExecutionService authExecutionService;
+    @Mock private PasswordResetService passwordResetService;
 
-    @Mock
-    private PasswordResetService passwordResetService;
+    @InjectMocks private AuthController authController;
 
-    @InjectMocks
-    private AuthController authController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
     }
 
-    // --- Login Tests ---
+    // ==========================================
+    // Email Login
+    // ==========================================
 
     @Test
     void testLogin_Success() throws Exception {
-        // FIX: Match LoginRequestDTO fields
         LoginRequestDTO request = new LoginRequestDTO();
-        request.setEmail("test@example.com");
+        request.setEmail("test@test.com");
         request.setPassword("password");
-        request.setRecaptchaToken("valid-recaptcha"); // Required field
+        request.setRecaptchaToken("token");
 
-        AuthResponseDTO response = AuthResponseDTO.builder()
-                .success(true)
-                .message("Login successful")
-                .build();
-
-        when(authExecutionService.authenticateWithEmail(any(LoginRequestDTO.class))).thenReturn(response);
+        AuthResponseDTO response = AuthResponseDTO.builder().success(true).build();
+        when(authExecutionService.authenticateWithEmail(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -72,34 +67,34 @@ class AuthControllerTest {
     @Test
     void testLogin_Failure() throws Exception {
         LoginRequestDTO request = new LoginRequestDTO();
-        request.setEmail("test@example.com");
-        request.setPassword("wrongpass");
-        request.setRecaptchaToken("valid-recaptcha");
+        request.setEmail("test@test.com");
+        request.setPassword("password");
+        request.setRecaptchaToken("token");
 
-        when(authExecutionService.authenticateWithEmail(any())).thenThrow(new RuntimeException("Invalid credentials"));
+        when(authExecutionService.authenticateWithEmail(any()))
+                .thenThrow(new RuntimeException("Bad credentials"));
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                .andExpect(jsonPath("$.message").value("Bad credentials"));
     }
 
-    // --- Social Login Tests ---
+    // ==========================================
+    // Google Login
+    // ==========================================
 
     @Test
-    void testGoogleLogin_Success() throws Exception {
-        // FIX: Match SocialLoginRequestDTO fields
+    void testLoginWithGoogle_Success() throws Exception {
         SocialLoginRequestDTO request = new SocialLoginRequestDTO();
         request.setProvider(AuthProvider.GOOGLE);
-        request.setAccessToken("google-token"); // Changed from 'token'
-        request.setRecaptchaToken("valid-recaptcha");
+        request.setAccessToken("token");
+        request.setRecaptchaToken("recaptcha");
 
         AuthResponseDTO response = AuthResponseDTO.builder().success(true).build();
-
-        when(authExecutionService.authenticateWithSocial(any(SocialLoginRequestDTO.class), eq(AuthProvider.GOOGLE)))
-                .thenReturn(response);
+        when(authExecutionService.authenticateWithSocial(any(), eq(AuthProvider.GOOGLE))).thenReturn(response);
 
         mockMvc.perform(post("/api/auth/login/google")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -109,16 +104,35 @@ class AuthControllerTest {
     }
 
     @Test
-    void testFacebookLogin_Success() throws Exception {
+    void testLoginWithGoogle_Failure() throws Exception {
+        SocialLoginRequestDTO request = new SocialLoginRequestDTO();
+        request.setProvider(AuthProvider.GOOGLE);
+        request.setAccessToken("token");
+        request.setRecaptchaToken("recaptcha");
+
+        when(authExecutionService.authenticateWithSocial(any(), eq(AuthProvider.GOOGLE)))
+                .thenThrow(new RuntimeException("Google Auth Failed"));
+
+        mockMvc.perform(post("/api/auth/login/google")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Google Auth Failed"));
+    }
+
+    // ==========================================
+    // Facebook Login
+    // ==========================================
+
+    @Test
+    void testLoginWithFacebook_Success() throws Exception {
         SocialLoginRequestDTO request = new SocialLoginRequestDTO();
         request.setProvider(AuthProvider.FACEBOOK);
-        request.setAccessToken("fb-token"); // Changed from 'token'
-        request.setRecaptchaToken("valid-recaptcha");
+        request.setAccessToken("token");
+        request.setRecaptchaToken("recaptcha");
 
         AuthResponseDTO response = AuthResponseDTO.builder().success(true).build();
-
-        when(authExecutionService.authenticateWithSocial(any(SocialLoginRequestDTO.class), eq(AuthProvider.FACEBOOK)))
-                .thenReturn(response);
+        when(authExecutionService.authenticateWithSocial(any(), eq(AuthProvider.FACEBOOK))).thenReturn(response);
 
         mockMvc.perform(post("/api/auth/login/facebook")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -127,27 +141,37 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-    // --- MFA Verification Tests ---
+    @Test
+    void testLoginWithFacebook_Failure() throws Exception {
+        SocialLoginRequestDTO request = new SocialLoginRequestDTO();
+        request.setProvider(AuthProvider.FACEBOOK);
+        request.setAccessToken("token");
+        request.setRecaptchaToken("recaptcha");
+
+        when(authExecutionService.authenticateWithSocial(any(), eq(AuthProvider.FACEBOOK)))
+                .thenThrow(new RuntimeException("FB Auth Failed"));
+
+        mockMvc.perform(post("/api/auth/login/facebook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("FB Auth Failed"));
+    }
+
+    // ==========================================
+    // MFA Verification
+    // ==========================================
 
     @Test
     void testVerifyMFA_Success() throws Exception {
-        // 1. Prepare the Request (Must include ALL @NotBlank fields)
         MFARequestDTO request = new MFARequestDTO();
-        request.setEmail("test@example.com");
-        request.setCode("123456"); // Any 6 digits work because we Mock the service
-        request.setSessionToken("dummy-session-token-xyz"); // REQUIRED field
+        request.setEmail("test@test.com");
+        request.setCode("123456");
+        request.setSessionToken("session");
 
-        // 2. Prepare the Expected Response
-        AuthResponseDTO response = AuthResponseDTO.builder()
-                .success(true)
-                .message("Authentication successful")
-                .build();
+        AuthResponseDTO response = AuthResponseDTO.builder().success(true).build();
+        when(authExecutionService.verifyMFA(any())).thenReturn(response);
 
-        // 3. Mock the Service Behavior
-        // This bypasses the real TOTP time check, solving the "changing code" issue
-        when(authExecutionService.verifyMFA(any(MFARequestDTO.class))).thenReturn(response);
-
-        // 4. Perform Request & Verify
         mockMvc.perform(post("/api/auth/verify-mfa")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -155,43 +179,109 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-    // --- Password Reset Tests ---
+    @Test
+    void testVerifyMFA_Failure() throws Exception {
+        MFARequestDTO request = new MFARequestDTO();
+        request.setEmail("test@test.com");
+        request.setCode("123456");
+        request.setSessionToken("session");
+
+        when(authExecutionService.verifyMFA(any())).thenThrow(new RuntimeException("Invalid Code"));
+
+        mockMvc.perform(post("/api/auth/verify-mfa")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid Code"));
+    }
+
+    // ==========================================
+    // Logout
+    // ==========================================
+
+    @Test
+    void testLogout_Success() throws Exception {
+        mockMvc.perform(post("/api/auth/logout")
+                .header("Authorization", "Bearer token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testLogout_Failure() throws Exception {
+        doThrow(new RuntimeException("Logout Error")).when(authExecutionService).logout(anyString());
+
+        mockMvc.perform(post("/api/auth/logout")
+                .header("Authorization", "Bearer token"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    // ==========================================
+    // Forgot Password
+    // ==========================================
 
     @Test
     void testForgotPassword_Success() throws Exception {
         PasswordResetRequestDTO request = new PasswordResetRequestDTO();
-        request.setEmail("test@example.com");
-        
-        MessageResponseDTO response = MessageResponseDTO.builder().success(true).message("Email sent").build();
+        request.setEmail("test@test.com");
 
-        when(passwordResetService.requestPasswordReset("test@example.com")).thenReturn(response);
+        MessageResponseDTO response = MessageResponseDTO.builder().success(true).build();
+        when(passwordResetService.requestPasswordReset(anyString())).thenReturn(response);
 
         mockMvc.perform(post("/api/auth/forgot-password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Email sent"));
+                .andExpect(jsonPath("$.success").value(true));
     }
+
+    @Test
+    void testForgotPassword_Failure() throws Exception {
+        PasswordResetRequestDTO request = new PasswordResetRequestDTO();
+        request.setEmail("test@test.com");
+
+        when(passwordResetService.requestPasswordReset(anyString())).thenThrow(new RuntimeException("User not found"));
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("User not found"));
+    }
+
+    // ==========================================
+    // Reset Password
+    // ==========================================
 
     @Test
     void testResetPassword_Success() throws Exception {
         PasswordResetConfirmRequestDTO request = new PasswordResetConfirmRequestDTO();
         request.setToken("token");
-        request.setNewPassword("newPass");
-        request.setConfirmPassword("newPass"); // This will now work
+        request.setNewPassword("pass");
+        request.setConfirmPassword("pass");
 
-        MessageResponseDTO response = MessageResponseDTO.builder()
-                .success(true)
-                .message("Password changed")
-                .build();
-
-        when(passwordResetService.confirmPasswordReset(any(PasswordResetConfirmRequestDTO.class)))
-                .thenReturn(response);
+        MessageResponseDTO response = MessageResponseDTO.builder().success(true).build();
+        when(passwordResetService.confirmPasswordReset(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/auth/reset-password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void testResetPassword_Failure() throws Exception {
+        PasswordResetConfirmRequestDTO request = new PasswordResetConfirmRequestDTO();
+        request.setToken("token");
+        request.setNewPassword("pass");
+        request.setConfirmPassword("pass");
+
+        when(passwordResetService.confirmPasswordReset(any())).thenThrow(new RuntimeException("Token expired"));
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Token expired"));
     }
 }

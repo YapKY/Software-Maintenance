@@ -33,7 +33,7 @@ class RegistrationControllerTest {
     @InjectMocks
     private RegistrationController registrationController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
@@ -42,15 +42,16 @@ class RegistrationControllerTest {
 
     @Test
     void testRegisterUser_Success() throws Exception {
-        // FIX: Match UserRegisterRequestDTO fields
-        UserRegisterRequestDTO request = new UserRegisterRequestDTO();
-        request.setEmail("user@test.com");
-        request.setPassword("StrongPass1!");
-        request.setName("John Doe"); // changed from setFullName
-        request.setCustIcNo("900101-14-1234"); // Added
-        request.setGender(Gender.MALE); // Added
-        request.setPhoneNumber("012-3456789"); // Added
-        request.setRecaptchaToken("valid-recaptcha"); // Added
+        // Prepare valid request
+        UserRegisterRequestDTO request = UserRegisterRequestDTO.builder()
+                .email("user@test.com")
+                .password("StrongPass1!")
+                .name("John Doe")
+                .custIcNo("900101-14-1234")
+                .gender(Gender.MALE)
+                .phoneNumber("012-3456789")
+                .recaptchaToken("valid-token")
+                .build();
 
         AuthResponseDTO response = AuthResponseDTO.builder().success(true).message("User registered").build();
 
@@ -60,19 +61,21 @@ class RegistrationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("User registered"));
     }
 
     @Test
     void testRegisterUser_Failure() throws Exception {
-        UserRegisterRequestDTO request = new UserRegisterRequestDTO();
-        request.setEmail("user@test.com");
-        request.setPassword("StrongPass1!");
-        request.setName("John Doe");
-        request.setCustIcNo("900101-14-1234");
-        request.setGender(Gender.MALE);
-        request.setPhoneNumber("012-3456789");
-        request.setRecaptchaToken("valid-recaptcha");
+        UserRegisterRequestDTO request = UserRegisterRequestDTO.builder()
+                .email("user@test.com")
+                .password("StrongPass1!")
+                .name("John Doe")
+                .custIcNo("900101-14-1234")
+                .gender(Gender.MALE)
+                .phoneNumber("012-3456789")
+                .recaptchaToken("valid-token")
+                .build();
 
         when(registrationExecutionService.registerUser(any())).thenThrow(new RuntimeException("Email exists"));
 
@@ -86,14 +89,16 @@ class RegistrationControllerTest {
 
     @Test
     void testRegisterAdmin_Success() throws Exception {
-        // FIX: Match AdminRegisterRequestDTO fields
-        AdminRegisterRequestDTO request = new AdminRegisterRequestDTO();
-        request.setEmail("admin@test.com");
-        request.setStaffPass("StrongPass1!"); // changed from setPassword
-        request.setName("Admin User"); // changed from setFullName
-        request.setPosition("Manager"); // changed from setDepartment
-        request.setGender(Gender.FEMALE); // Added
-        request.setPhoneNumber("012-3456789"); // Added
+        // Prepare valid Admin request
+        AdminRegisterRequestDTO request = AdminRegisterRequestDTO.builder()
+                .email("admin@test.com")
+                .staffPass("StrongPass1!")
+                .name("Admin User")
+                .position("Manager")
+                .gender(Gender.FEMALE)
+                .phoneNumber("012-3456789")
+                .mfaEnabled(true)
+                .build();
 
         AuthResponseDTO response = AuthResponseDTO.builder().success(true).message("Admin registered").build();
 
@@ -104,5 +109,24 @@ class RegistrationControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void testRegisterAdmin_Failure() throws Exception {
+        AdminRegisterRequestDTO request = AdminRegisterRequestDTO.builder()
+                .email("admin@test.com")
+                .staffPass("StrongPass1!")
+                .name("Admin User")
+                .position("Manager")
+                .gender(Gender.FEMALE)
+                .build();
+
+        when(registrationExecutionService.registerAdmin(any())).thenThrow(new RuntimeException("Unauthorized"));
+
+        mockMvc.perform(post("/api/register/admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unauthorized"));
     }
 }

@@ -3,6 +3,7 @@ package com.example.springboot.decorator;
 import com.example.springboot.dto.request.LoginRequestDTO;
 import com.example.springboot.dto.response.AuthResponseDTO;
 import com.example.springboot.dto.response.JWTResponseDTO;
+import com.example.springboot.dto.response.MFAStatusDTO;
 import com.example.springboot.enums.Role;
 import com.example.springboot.exception.InvalidCredentialsException;
 import com.example.springboot.exception.RateLimitExceededException;
@@ -14,7 +15,7 @@ import com.example.springboot.repository.SuperadminRepository;
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.jwt.JwtTokenProvider;
 import com.example.springboot.security.ratelimit.RateLimiter;
-import com.example.springboot.service.MFAService; // IMPORT ADDED
+import com.example.springboot.service.MFAService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,123 +48,206 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     private LoginRequestDTO loginRequest;
-    private User user;
-    private Admin admin;
-    private Superadmin superadmin;
+    private User mockUser;
+    private Admin mockAdmin;
+    private Superadmin mockSuperadmin;
 
     @BeforeEach
     void setUp() {
         loginRequest = new LoginRequestDTO();
         loginRequest.setEmail("test@example.com");
         loginRequest.setPassword("password");
+        loginRequest.setRecaptchaToken("valid-token");
 
-        user = new User();
-        user.setEmail("test@example.com");
-        user.setCustPassword("encodedPass");
-        user.setCustId("user-1");
-        user.setEmailVerified(true);
-        user.setAccountLocked(false);
-        user.setFailedLoginAttempts(0);
-        user.setMfaEnabled(false);
-
-        admin = new Admin();
-        admin.setEmail("admin@example.com");
-        admin.setStaffPass("encodedPass");
-        admin.setStaffId("admin-1");
-        admin.setAccountLocked(false);
-        admin.setFailedLoginAttempts(0);
-        admin.setMfaEnabled(false);
-
-        superadmin = new Superadmin();
-        superadmin.setEmail("super@example.com");
-        superadmin.setPassword("encodedPass");
-        superadmin.setId("super-1");
-        superadmin.setAccountLocked(false);
-    }
-
-    @Test
-    @DisplayName("Should throw RateLimitExceededException when blocked")
-    void testPerformAuthentication_RateLimitExceeded() {
-        when(rateLimiter.isBlocked(anyString())).thenReturn(true);
-        when(rateLimiter.getBlockTimeRemaining(anyString())).thenReturn(60L);
-
-        assertThrows(RateLimitExceededException.class, () ->
-            authService.performAuthentication(loginRequest)
-        );
-        verify(userRepository, never()).findByEmail(anyString());
-    }
-
-    @Test
-    @DisplayName("Should authenticate User successfully")
-    void testPerformAuthentication_UserSuccess() {
-        when(rateLimiter.isBlocked(anyString())).thenReturn(false);
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        mockUser = new User();
+        mockUser.setCustId("u1");
+        mockUser.setEmail("test@example.com");
+        mockUser.setCustPassword("encodedPwd"); // Corrected field name
+        mockUser.setRole(Role.USER);
+        mockUser.setAccountLocked(false);
+        mockUser.setEmailVerified(true);
+        mockUser.setFailedLoginAttempts(0);
         
-        // FIX: Use Builder
-        JWTResponseDTO jwtResponse = JWTResponseDTO.builder()
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .role(Role.USER)
-                .build();
-                
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any(Role.class))).thenReturn(jwtResponse);
+        mockAdmin = new Admin();
+        mockAdmin.setStaffId("a1"); // Corrected field name
+        mockAdmin.setEmail("admin@example.com");
+        mockAdmin.setStaffPass("encodedPwd"); // Corrected field name
+        mockAdmin.setRole(Role.ADMIN);
+        
+        mockSuperadmin = new Superadmin();
+        mockSuperadmin.setId("sa1");
+        mockSuperadmin.setEmail("super@example.com");
+        mockSuperadmin.setPassword("encodedPwd");
+        mockSuperadmin.setRole(Role.SUPERADMIN);
+        mockSuperadmin.setMfaEnabled(true);
+    }
+
+    // --- Rate Limit Tests ---
+
+    @Test
+    @DisplayName("Login - Rate Limit Exceeded")
+    void testLogin_RateLimitExceeded() {
+        when(rateLimiter.isBlocked("test@example.com")).thenReturn(true);
+        when(rateLimiter.getBlockTimeRemaining("test@example.com")).thenReturn(300L);
+
+        assertThrows(RateLimitExceededException.class, () -> authService.performAuthentication(loginRequest));
+    }
+
+    // --- User Login Tests ---
+
+    @Test
+    @DisplayName("Login User - Success (No MFA)")
+    void testLogin_User_Success_NoMFA() {
+        // Setup: User found in repository
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        // User has MFA disabled by default in setup
+        
+        JWTResponseDTO jwt = JWTResponseDTO.builder().accessToken("access").build();
+        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(jwt);
+
+        AuthResponseDTO response = authService.performAuthentication(loginRequest);
+
+        assertTrue(response.getSuccess());
+        assertFalse(response.getRequiresMfa());
+        assertNotNull(response.getTokens());
+        
+        verify(userRepository).save(mockUser); // Updates last login
+        verify(rateLimiter).clearAttempts(loginRequest.getEmail());
+    }
+
+    @Test
+    @DisplayName("Login User - Failure (Wrong Password)")
+    void testLogin_User_WrongPassword() {
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches("password", "encodedPwd")).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+
+        verify(rateLimiter).recordFailedAttempt(loginRequest.getEmail());
+        verify(userRepository).save(mockUser);
+        assertEquals(1, mockUser.getFailedLoginAttempts());
+    }
+    
+    @Test
+    @DisplayName("Login User - Account Locked")
+    void testLogin_User_AccountLocked() {
+        mockUser.setAccountLocked(true);
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        // Password matching isn't checked if locked check comes first, but strict stubbing might require handling
+        // Based on implementation: Locked check comes first.
+        
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+    }
+
+    @Test
+    @DisplayName("Login User - MFA Required (Step 1)")
+    void testLogin_User_MFARequired() {
+        mockUser.setMfaEnabled(true);
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        // LoginRequest has no MFA code by default
+        
+        when(jwtTokenProvider.generateMFASessionToken(anyString(), anyString(), any())).thenReturn("mfa-session-token");
+
+        AuthResponseDTO response = authService.performAuthentication(loginRequest);
+
+        assertFalse(response.getSuccess()); // Success is false because MFA is needed
+        assertTrue(response.getRequiresMfa());
+        assertEquals("mfa-session-token", response.getMfaSessionToken());
+    }
+
+    @Test
+    @DisplayName("Login User - MFA Validation (Step 2)")
+    void testLogin_User_MFAValidation() {
+        mockUser.setMfaEnabled(true);
+        loginRequest.setMfaCode("123456"); // Code provided
+        
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(mfaService.validateMFACode(anyString(), any(), eq("123456"))).thenReturn(true);
+        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
 
         assertTrue(response.getSuccess());
         assertNotNull(response.getTokens());
-        verify(rateLimiter).clearAttempts(anyString());
     }
 
     @Test
-    @DisplayName("Should authenticate Admin successfully")
-    void testPerformAuthentication_AdminSuccess() {
-        loginRequest.setEmail("admin@example.com");
-        when(rateLimiter.isBlocked(anyString())).thenReturn(false);
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(adminRepository.findByEmail(anyString())).thenReturn(Optional.of(admin));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+    @DisplayName("Login User - MFA Invalid Code")
+    void testLogin_User_MFAInvalid() {
+        mockUser.setMfaEnabled(true);
+        loginRequest.setMfaCode("000000");
         
-        // FIX: Use Builder
-        JWTResponseDTO jwtResponse = JWTResponseDTO.builder()
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .role(Role.ADMIN)
-                .build();
-                
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any(Role.class))).thenReturn(jwtResponse);
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(mfaService.validateMFACode(anyString(), any(), eq("000000"))).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+    }
+
+    // --- Admin Login Tests ---
+
+    @Test
+    @DisplayName("Login Admin - Success")
+    void testLogin_Admin_Success() {
+        loginRequest.setEmail("admin@example.com");
+        
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(mockAdmin));
+        
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
-
         assertTrue(response.getSuccess());
-        verify(rateLimiter).clearAttempts(anyString());
+        verify(adminRepository).save(mockAdmin);
     }
 
     @Test
-    @DisplayName("Should authenticate Superadmin successfully with MFA")
-    void testPerformAuthentication_SuperadminSuccess() {
-        loginRequest.setEmail("super@example.com");
-        loginRequest.setMfaCode("123456"); 
+    @DisplayName("Login Admin - Not Found")
+    void testLogin_Admin_NotFound() {
+        loginRequest.setEmail("admin@example.com");
         
-        when(rateLimiter.isBlocked(anyString())).thenReturn(false);
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(adminRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(superadminRepository.findByEmail(anyString())).thenReturn(Optional.of(superadmin));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(mfaService.validateMFACode(anyString(), eq(Role.SUPERADMIN), anyString())).thenReturn(true);
+        when(superadminRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        // FIX: Use Builder
-        JWTResponseDTO jwtResponse = JWTResponseDTO.builder()
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .role(Role.SUPERADMIN)
-                .build();
-                
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any(Role.class))).thenReturn(jwtResponse);
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+    }
+
+    // --- Superadmin Login Tests ---
+
+    @Test
+    @DisplayName("Login Superadmin - Success")
+    void testLogin_Superadmin_Success() {
+        loginRequest.setEmail("super@example.com");
+        loginRequest.setMfaCode("123456"); // Superadmin needs MFA code in request to succeed
+        
+        when(userRepository.findByEmail("super@example.com")).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail("super@example.com")).thenReturn(Optional.empty());
+        when(superadminRepository.findByEmail("super@example.com")).thenReturn(Optional.of(mockSuperadmin));
+        
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(mfaService.validateMFACode(anyString(), any(), anyString())).thenReturn(true);
+        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
-
         assertTrue(response.getSuccess());
+    }
+
+    @Test
+    @DisplayName("Handle Failed Login - Locking Logic")
+    void testLogin_User_Locking() {
+        mockUser.setFailedLoginAttempts(4); // Next failure should lock it
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+
+        assertEquals(5, mockUser.getFailedLoginAttempts());
+        assertTrue(mockUser.getAccountLocked());
+        verify(userRepository).save(mockUser);
     }
 }
