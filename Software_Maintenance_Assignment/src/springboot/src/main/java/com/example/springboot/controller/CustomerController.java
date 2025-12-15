@@ -2,6 +2,7 @@ package com.example.springboot.controller;
 
 import com.example.springboot.model.Customer;
 import com.example.springboot.service.CustomerService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.Optional;
  * CONTROLLER LAYER: Handles HTTP requests and responses
  * Delegates business logic to Service layer
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/customers")
 @CrossOrigin(origins = "*")
@@ -149,12 +151,50 @@ public class CustomerController {
     // Helper methods for legacy-style responses
     private Map<String, Object> createCustomerResponse(Customer customer) {
         Map<String, Object> response = new HashMap<>();
+        // Core Customer fields
         response.put("custId", customer.getCustId());
-        response.put("custIcNo", customer.getCustIcNo()); // Fixed: matches frontend expectation
+        response.put("custIcNo", customer.getCustIcNo());
+        response.put("custPassword", customer.getCustPassword());
         response.put("name", customer.getName());
         response.put("email", customer.getEmail());
         response.put("phoneNumber", customer.getPhoneNumber());
         response.put("gender", customer.getGender());
+
+        // Fetch additional User fields from Firestore to preserve authentication
+        // metadata
+        try {
+            com.google.cloud.firestore.Firestore firestore = com.google.firebase.cloud.FirestoreClient.getFirestore();
+            com.google.cloud.firestore.DocumentSnapshot doc = firestore.collection("customers")
+                    .document(customer.getCustId()).get().get();
+
+            if (doc.exists()) {
+                // Include User authentication fields if they exist
+                if (doc.contains("createdAt"))
+                    response.put("createdAt", doc.getString("createdAt"));
+                if (doc.contains("updatedAt"))
+                    response.put("updatedAt", doc.getString("updatedAt"));
+                if (doc.contains("role"))
+                    response.put("role", doc.getString("role"));
+                if (doc.contains("authProvider"))
+                    response.put("authProvider", doc.getString("authProvider"));
+                if (doc.contains("providerId"))
+                    response.put("providerId", doc.getString("providerId"));
+                if (doc.contains("mfaEnabled"))
+                    response.put("mfaEnabled", doc.getBoolean("mfaEnabled"));
+                if (doc.contains("emailVerified"))
+                    response.put("emailVerified", doc.getBoolean("emailVerified"));
+                if (doc.contains("accountLocked"))
+                    response.put("accountLocked", doc.getBoolean("accountLocked"));
+                if (doc.contains("failedLoginAttempts"))
+                    response.put("failedLoginAttempts", doc.getLong("failedLoginAttempts"));
+                if (doc.contains("lastLoginAt"))
+                    response.put("lastLoginAt", doc.getString("lastLoginAt"));
+            }
+        } catch (Exception e) {
+            // If Firestore fetch fails, return core fields only
+            log.warn("Could not fetch User metadata fields for customer {}: {}", customer.getCustId(), e.getMessage());
+        }
+
         return response;
     }
 

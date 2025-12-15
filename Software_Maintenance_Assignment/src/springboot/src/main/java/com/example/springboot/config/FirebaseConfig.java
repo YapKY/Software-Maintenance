@@ -16,25 +16,26 @@ import java.io.IOException;
  * Firebase Configuration
  * Initializes Firebase Admin SDK and provides Firestore instance
  */
-@Configuration
-public class FirebaseConfig {
+// @Configuration
+// public class FirebaseConfig {
 
-    @Value("${firebase.credentials.path}")
-    private String firebaseCredentialsPath;
+// @Value("${firebase.credentials.path}")
+// private String firebaseCredentialsPath;
 
-    @Bean
-    public Firestore firestore() throws IOException {
-        // Initialize Firebase if not already initialized
-        if (FirebaseApp.getApps().isEmpty()) {
-            FileInputStream serviceAccount = new FileInputStream(firebaseCredentialsPath);
+// @Bean
+// public Firestore firestore() throws IOException {
+// // Initialize Firebase if not already initialized
+// if (FirebaseApp.getApps().isEmpty()) {
+// FileInputStream serviceAccount = new
+// FileInputStream(firebaseCredentialsPath);
 
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
+// FirebaseOptions options = FirebaseOptions.builder()
+// .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+// .build();
 
-            FirebaseApp.initializeApp(options);
-        }
+// FirebaseApp.initializeApp(options);
+// }
 
-        return FirestoreClient.getFirestore();
-    }
-}
+// return FirestoreClient.getFirestore();
+// }
+// }

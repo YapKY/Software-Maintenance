@@ -1,157 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Dashboard - Airline Ticketing</title>
-    
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/dashboard.css">
-    <link rel="stylesheet" href="../css/validation.css">
-</head>
-<body>
+
+    <link rel="stylesheet" href="../css/common.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/validation.css" />
+  </head>
+  <body>
     <nav class="navbar">
-        <h1>✈️ Airline Ticketing</h1>
-        <div class="navbar-right">
-            <div class="user-info">
-                <div class="avatar" id="userAvatar">U</div>
-                <span id="userName">Loading...</span>
-            </div>
-            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      <h1>✈️ Airline Ticketing</h1>
+      <div class="navbar-right">
+        <div class="user-info">
+          <div class="avatar" id="userAvatar">U</div>
+          <span id="userName">Loading...</span>
         </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
     </nav>
 
     <div class="container">
-        <div id="alertSuccess" class="alert alert-success"></div>
-        <div id="alertError" class="alert alert-error"></div>
+      <div id="alertSuccess" class="alert alert-success"></div>
+      <div id="alertError" class="alert alert-error"></div>
 
-        <div id="loadingState" class="loading">
-            <div class="spinner"></div>
-            <p>Loading your dashboard...</p>
+      <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+
+      <div id="profileSection" class="profile-section" style="display: none">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profileAvatar">U</div>
+          <div class="profile-info">
+            <h2 id="profileName">User Name</h2>
+            <p id="profileEmail">email@example.com</p>
+          </div>
+          <button
+            class="btn btn-primary"
+            style="
+              align-self: flex-start;
+              margin-left: auto;
+              width: fit-content;
+            "
+            onclick="editProfile()"
+          >
+            Edit Profile
+          </button>
         </div>
 
-        <div id="profileSection" class="profile-section" style="display: none;">
-            <div class="profile-header">
-                <div class="profile-avatar" id="profileAvatar">U</div>
-                <div class="profile-info">
-                    <h2 id="profileName">User Name</h2>
-                    <p id="profileEmail">email@example.com</p>
-                </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Phone Number</div>
+            <div class="info-value" id="profilePhone">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Account Type</div>
+            <div class="info-value" id="profileRole">USER</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email Status</div>
+            <div class="info-value" id="emailStatus">
+              <span class="mfa-status mfa-enabled">Verified</span>
             </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">MFA Status</div>
+            <div class="info-value" id="mfaStatus">
+              <span class="mfa-status mfa-disabled">Disabled</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Last Login</div>
+            <div class="info-value" id="lastLogin">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Member Since</div>
+            <div class="info-value" id="memberSince">-</div>
+          </div>
+        </div>
+      </div>
 
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Phone Number</div>
-                    <div class="info-value" id="profilePhone">-</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Account Type</div>
-                    <div class="info-value" id="profileRole">USER</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Email Status</div>
-                    <div class="info-value" id="emailStatus">
-                        <span class="mfa-status mfa-enabled">Verified</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">MFA Status</div>
-                    <div class="info-value" id="mfaStatus">
-                        <span class="mfa-status mfa-disabled">Disabled</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Last Login</div>
-                    <div class="info-value" id="lastLogin">-</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Member Since</div>
-                    <div class="info-value" id="memberSince">-</div>
-                </div>
-            </div>
+      <div id="dashboardCards" class="dashboard-grid" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">✈️</div>
+            <div class="card-title">Book a Flight</div>
+          </div>
+          <div class="card-content">
+            Search and book flights to destinations worldwide.
+          </div>
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href = '/search-flight'"
+          >
+            Search Flights
+          </button>
         </div>
 
-        <div id="dashboardCards" class="dashboard-grid" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">✈️</div>
-                    <div class="card-title">Book a Flight</div>
-                </div>
-                <div class="card-content">
-                    Search and book flights to destinations worldwide.
-                </div>
-                <button class="btn btn-primary" onclick="window.location.href = '/search-flight'">
-                    Search Flights
-                </button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">🎫</div>
-                    <div class="card-title">My Bookings</div>
-                </div>
-                <div class="card-content">
-                    View and manage your flight bookings.
-                </div>
-                <div class="card-value">0</div>
-                <button class="btn btn-primary" onclick="alert('Feature coming soon!')">
-                    View Bookings
-                </button>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">🔒</div>
-                    <div class="card-title">Security</div>
-                </div>
-                <div class="card-content">
-                    Manage your account security settings.
-                </div>
-                <button class="btn btn-primary" onclick="window.location.href='mfa-setup.html'">
-                    Setup MFA
-                </button>
-                <button class="btn btn-secondary" onclick="showChangePasswordModal()">
-                    Change Password
-                </button>
-            </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🎫</div>
+            <div class="card-title">My Bookings</div>
+          </div>
+          <div class="card-content">View and manage your flight bookings.</div>
+          <div class="card-value">0</div>
+          <button
+            class="btn btn-primary"
+            onclick="alert('Feature coming soon!')"
+          >
+            View Bookings
+          </button>
         </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🔒</div>
+            <div class="card-title">Security</div>
+          </div>
+          <div class="card-content">Manage your account security settings.</div>
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href='mfa-setup.html'"
+          >
+            Setup MFA
+          </button>
+          <button class="btn btn-secondary" onclick="showChangePasswordModal()">
+            Change Password
+          </button>
+        </div>
+      </div>
     </div>
 
     <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Change Password</h2>
-                <span class="close" onclick="hideChangePasswordModal()">&times;</span>
-            </div>
-            
-            <div id="modalAlertError" class="alert alert-error" style="margin: 20px 30px 0 30px;"></div>
-
-            <form id="changePasswordForm">
-                <div class="form-group">
-                    <label>Current Password</label>
-                    <input type="password" id="currentPassword" required>
-                </div>
-                <div class="form-group">
-                    <label>New Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="newPassword" required>
-                        <span class="toggle-password" onclick="togglePassword('newPassword')">👁️</span>
-                    </div>
-                    <div id="passwordStrength" style="display: none;"></div>
-                </div>
-                <div class="form-group">
-                    <label>Confirm New Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="confirmNewPassword" required>
-                        <span class="toggle-password" onclick="togglePassword('confirmNewPassword')">👁️</span>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="hideChangePasswordModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Password</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Change Password</h2>
+          <span class="close" onclick="hideChangePasswordModal()">&times;</span>
         </div>
+
+        <div
+          id="modalAlertError"
+          class="alert alert-error"
+          style="margin: 20px 30px 0 30px"
+        ></div>
+
+        <form id="changePasswordForm">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" id="currentPassword" required />
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="newPassword" required />
+              <span
+                class="toggle-password"
+                onclick="togglePassword('newPassword')"
+                >👁️</span
+              >
+            </div>
+            <div id="passwordStrength" style="display: none"></div>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="confirmNewPassword" required />
+              <span
+                class="toggle-password"
+                onclick="togglePassword('confirmNewPassword')"
+                >👁️</span
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="hideChangePasswordModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Update Password
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script src="../js/config/config.js"></script>
@@ -162,10 +198,16 @@
     <script src="../js/api/userApi.js"></script>
     <script src="../js/pages/userDashboard.js"></script>
     <script>
-        function togglePassword(id) {
-            const x = document.getElementById(id);
-            x.type = x.type === "password" ? "text" : "password";
-        }
+      function togglePassword(id) {
+        const x = document.getElementById(id);
+        x.type = x.type === "password" ? "text" : "password";
+      }
+
+      function editProfile() {
+        const email = document.getElementById("profileEmail").textContent;
+        sessionStorage.setItem("customerEmail", email);
+        window.location.href = "/customer-detail";
+      }
     </script>
-</body>
+  </body>
 </html>

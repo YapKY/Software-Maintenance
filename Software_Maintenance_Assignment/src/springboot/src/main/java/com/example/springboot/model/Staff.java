@@ -26,6 +26,20 @@ public class Staff {
     private String email; // e.g., "john@example.com"
 
     /**
+     * Alias for getName() - for backwards compatibility
+     */
+    public String getFullName() {
+        return this.name;
+    }
+
+    /**
+     * Alias for setName() - for backwards compatibility
+     */
+    public void setFullName(String fullName) {
+        this.name = fullName;
+    }
+
+    /**
      * Convenience constructor without documentId
      */
     public Staff(String staffId, String position, String stfPass,

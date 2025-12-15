@@ -384,7 +384,6 @@
           <h1>👥 All Customers</h1>
           <div class="header-buttons">
             <a href="/" class="back-btn">← Back to Home</a>
-            <a href="/staff-list" class="back-btn">Staff Profiles →</a>
           </div>
         </div>
       </div>
@@ -414,7 +413,6 @@
                   <th>Phone</th>
                   <th>IC Number</th>
                   <th>Gender</th>
-                  <th style="text-align: center">Actions</th>
                 </tr>
               </thead>
               <tbody id="customerTableBody">
@@ -586,9 +584,7 @@
             <td>${customer.phoneNumber}</td>
             <td>${customer.custIcNo}</td>
             <td>${customer.gender}</td>
-            <td style="text-align: center;">
-              <a href="#" onclick="viewCustomerDetail('${customer.email}'); return false;" class="action-btn" style="text-decoration: none; display: inline-block;">👁️ View/Edit</a>
-            </td>
+            <!-- Actions removed: View/Edit button intentionally hidden in list view -->
           `;
           tbody.appendChild(row);
         });

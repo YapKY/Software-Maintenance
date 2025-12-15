@@ -34,7 +34,7 @@ public class CustomerRepository {
         }
         ApiFuture<WriteResult> writeResult = firestore.collection(COLLECTION_NAME)
                 .document(customer.getCustId())
-                .set(customer);
+                .set(customer, SetOptions.merge());
         writeResult.get();
         return customer;
     }

@@ -265,18 +265,6 @@
   </head>
   <body>
     <div id="app">
-      <!-- Header -->
-      <div class="header">
-        <div class="header-content">
-          <h1>👔 Staff Profile</h1>
-          <div class="header-buttons">
-            <a href="/" class="back-btn">← Home</a>
-            <a href="/customer-list" class="back-btn">Customer Profiles →</a>
-            <a href="/staff-list" class="back-btn">← All Staff</a>
-          </div>
-        </div>
-      </div>
-
       <!-- Main Content -->
       <div class="profile-container">
         <div class="card">
@@ -354,25 +342,29 @@
                 </div>
                 <div class="form-group">
                   <label>Position</label>
-                  <select id="editPosition">
-                    <option value="Manager">Manager</option>
-                    <option value="Airline Controller">
-                      Airline Controller
-                    </option>
-                    <option value="Ground Staff">Ground Staff</option>
-                    <option value="Flight Attendant">Flight Attendant</option>
-                    <option value="Pilot">Pilot</option>
-                  </select>
+                  <input type="text" id="editPosition" />
                 </div>
               </div>
 
               <!-- Buttons -->
               <div id="viewButtons" class="button-group">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/admin-dashboard'"
+                >
+                  ← Dashboard
+                </button>
                 <button class="edit-btn" onclick="enableEdit()">
                   ✏️ Edit Profile
                 </button>
               </div>
               <div id="editButtons" class="button-group" style="display: none">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/admin-dashboard'"
+                >
+                  ← Dashboard
+                </button>
                 <button class="cancel-btn" onclick="cancelEdit()">
                   Cancel
                 </button>
@@ -442,6 +434,7 @@
           displayStaff(staff);
           hideElement("loading");
           showElement("staffData");
+          enableEdit();
         } catch (error) {
           hideElement("loading");
           showError(error.message);
@@ -454,7 +447,11 @@
         document.getElementById("viewName").textContent = staff.name;
         document.getElementById("viewEmail").textContent = staff.email;
         document.getElementById("viewPhone").textContent = staff.phoneNumber;
-        document.getElementById("viewGender").textContent = staff.gender;
+        const genderText = staff.gender
+          ? staff.gender.charAt(0).toUpperCase() +
+            staff.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("viewGender").textContent = genderText;
         document.getElementById("viewPosition").textContent = staff.position;
       }
 
@@ -465,12 +462,17 @@
         showElement("editButtons");
         hideElement("successMessage");
 
-        document.getElementById("editName").value = currentStaff.name;
-        document.getElementById("editEmail").value = currentStaff.email;
-        document.getElementById("editPhone").value = currentStaff.phoneNumber;
-        document.getElementById("editGender").value = currentStaff.gender;
-        document.getElementById("editStaffId").value = currentStaff.staffId;
-        document.getElementById("editPosition").value = currentStaff.position;
+        document.getElementById("editName").value = currentStaff.name || "";
+        document.getElementById("editEmail").value = currentStaff.email || "";
+        document.getElementById("editPhone").value =
+          currentStaff.phoneNumber || "";
+        const genderValue = currentStaff.gender
+          ? currentStaff.gender.charAt(0).toUpperCase() +
+            currentStaff.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("editGender").value = genderValue;
+        document.getElementById("editPosition").value =
+          currentStaff.position || "";
       }
 
       function cancelEdit() {
@@ -501,8 +503,9 @@
       }
 
       function validatePhoneNumber(phoneNumber) {
+        // Phone number is optional for staff
         if (!phoneNumber || phoneNumber.trim() === "") {
-          return "Phone number cannot be empty";
+          return null;
         }
         if (!/^\d{3}-\d{7,8}$/.test(phoneNumber)) {
           return "Phone number must be in format XXX-XXXXXXX or XXX-XXXXXXXX";
@@ -555,13 +558,27 @@
 
         showElement("loading");
 
-        const updatedData = {
-          name: name,
-          email: email,
-          phoneNumber: phoneNumber,
-          gender: gender,
-          position: position,
-        };
+        // Build updatedData with only changed fields
+        const updatedData = {};
+        if ((name || "") !== (currentStaff.name || "")) {
+          updatedData.name = name;
+        }
+        // Allow phone number to be null/empty for staff
+        if ((phoneNumber || "") !== (currentStaff.phoneNumber || "")) {
+          updatedData.phoneNumber = phoneNumber || null;
+        }
+        const normalizedGender =
+          (gender || "").charAt(0).toUpperCase() +
+          (gender || "").slice(1).toLowerCase();
+        const currentNormalizedGender =
+          (currentStaff.gender || "").charAt(0).toUpperCase() +
+          (currentStaff.gender || "").slice(1).toLowerCase();
+        if (normalizedGender !== currentNormalizedGender) {
+          updatedData.gender = gender;
+        }
+        if ((position || "") !== (currentStaff.position || "")) {
+          updatedData.position = position;
+        }
 
         try {
           const response = await fetch(
@@ -595,8 +612,8 @@
 
           const data = await response.json();
 
-          // Update currentStaff with the response data
-          currentStaff = { ...currentStaff, ...data };
+          // Replace currentStaff with clean response data to avoid accumulating unwanted fields
+          currentStaff = data;
 
           displayStaff(currentStaff);
           cancelEdit();

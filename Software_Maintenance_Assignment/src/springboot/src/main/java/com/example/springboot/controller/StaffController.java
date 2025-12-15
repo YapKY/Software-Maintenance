@@ -2,6 +2,7 @@ package com.example.springboot.controller;
 
 import com.example.springboot.model.Staff;
 import com.example.springboot.service.StaffService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.Optional;
  * CONTROLLER LAYER: Handles HTTP requests and responses
  * Delegates business logic to Service layer
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/staff")
 @CrossOrigin(origins = "*")
@@ -88,9 +90,14 @@ public class StaffController {
      * Get all staff members
      */
     @GetMapping
-    public ResponseEntity<List<Staff>> getAllStaff() {
-        List<Staff> staffList = staffService.getAllStaff();
-        return ResponseEntity.ok(staffList);
+    public ResponseEntity<?> getAllStaff() {
+        try {
+            List<Staff> staffList = staffService.getAllStaff();
+            return ResponseEntity.ok(staffList);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error getting staff: " + e.getMessage()));
+        }
     }
 
     /**
@@ -112,9 +119,9 @@ public class StaffController {
      */
     @GetMapping("/staffid/{staffId}")
     public ResponseEntity<?> getStaffByStaffId(@PathVariable String staffId) {
-        Optional<Staff> staff = staffService.getStaffByStaffId(staffId);
-        if (staff.isPresent()) {
-            return ResponseEntity.ok(createStaffResponse(staff.get()));
+        Staff staff = staffService.getStaffByStaffId(staffId);
+        if (staff != null) {
+            return ResponseEntity.ok(createStaffResponse(staff));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(createErrorResponse("Staff not found"));
@@ -131,6 +138,9 @@ public class StaffController {
             return ResponseEntity.ok(createStaffResponse(saved));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error updating staff: " + e.getMessage()));
         }
     }
 
@@ -148,18 +158,62 @@ public class StaffController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error deleting staff: " + e.getMessage()));
         }
     }
 
     // Helper methods for legacy-style responses
     private Map<String, Object> createStaffResponse(Staff staff) {
         Map<String, Object> response = new HashMap<>();
+        // Core Staff fields - only include essential profile fields
         response.put("staffId", staff.getStaffId());
         response.put("position", staff.getPosition());
         response.put("name", staff.getName());
         response.put("email", staff.getEmail());
         response.put("phoneNumber", staff.getPhoneNumber());
         response.put("gender", staff.getGender());
+
+        // Fetch authentication metadata from Firestore
+        // Match the exact fields from staff-correct image
+        try {
+            com.google.cloud.firestore.Firestore firestore = com.google.firebase.cloud.FirestoreClient.getFirestore();
+            com.google.cloud.firestore.DocumentSnapshot doc = firestore.collection("staff")
+                    .document(staff.getStaffId()).get().get();
+
+            if (doc.exists()) {
+                // Include ONLY the fields shown in staff-correct image
+                if (doc.contains("staffPass"))
+                    response.put("staffPass", doc.getString("staffPass"));
+                if (doc.contains("createdAt"))
+                    response.put("createdAt", doc.getString("createdAt"));
+                if (doc.contains("updatedAt"))
+                    response.put("updatedAt", doc.getString("updatedAt"));
+                if (doc.contains("role"))
+                    response.put("role", doc.getString("role"));
+                if (doc.contains("mfaEnabled"))
+                    response.put("mfaEnabled", doc.getBoolean("mfaEnabled"));
+                if (doc.contains("accountLocked"))
+                    response.put("accountLocked", doc.getBoolean("accountLocked"));
+                if (doc.contains("failedLoginAttempts"))
+                    response.put("failedLoginAttempts", doc.getLong("failedLoginAttempts"));
+                if (doc.contains("lastLoginAt"))
+                    response.put("lastLoginAt", doc.getString("lastLoginAt"));
+                if (doc.contains("createdBy"))
+                    response.put("createdBy", doc.getString("createdBy"));
+
+                // DO NOT INCLUDE these fields:
+                // - stfPass (use staffPass from database instead)
+                // - documentId (internal field)
+                // - fullName (alias, use name instead)
+                // - manager, controller (internal flags)
+            }
+        } catch (Exception e) {
+            // If Firestore fetch fails, return core fields only
+            log.warn("Could not fetch additional metadata fields for staff {}: {}", staff.getStaffId(), e.getMessage());
+        }
+
         return response;
     }
 
@@ -169,12 +223,17 @@ public class StaffController {
      */
     @GetMapping("/debug/all")
     public ResponseEntity<?> debugGetAllStaff() {
-        List<Staff> staffList = staffService.getAllStaff();
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("total", staffList.size());
-        response.put("staff", staffList);
-        return ResponseEntity.ok(response);
+        try {
+            List<Staff> staffList = staffService.getAllStaff();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("total", staffList.size());
+            response.put("staff", staffList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error getting staff: " + e.getMessage()));
+        }
     }
 
     /**
@@ -184,13 +243,18 @@ public class StaffController {
      */
     @GetMapping("/index/{index}")
     public ResponseEntity<?> getStaffByIndex(@PathVariable int index) {
-        List<Staff> staffList = staffService.getAllStaff();
-        if (index > 0 && index <= staffList.size()) {
-            Staff staff = staffList.get(index - 1);
-            return ResponseEntity.ok(createStaffResponse(staff));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse("Staff index out of range. Available: 1-" + staffList.size()));
+        try {
+            List<Staff> staffList = staffService.getAllStaff();
+            if (index > 0 && index <= staffList.size()) {
+                Staff staff = staffList.get(index - 1);
+                return ResponseEntity.ok(createStaffResponse(staff));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(createErrorResponse("Staff index out of range. Available: 1-" + staffList.size()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error getting staff: " + e.getMessage()));
         }
     }
 
@@ -202,13 +266,13 @@ public class StaffController {
     public ResponseEntity<?> debugCreateTestStaff() {
         try {
             Staff testStaff = new Staff(
+                    "TEST001",
                     "Test Manager",
                     "11111",
                     "Test Staff",
                     "012-1234567",
                     "Male",
                     "teststaff@example.com");
-            testStaff.setStaffId(null); // Auto-generated
             Staff saved = staffService.createStaff(testStaff);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

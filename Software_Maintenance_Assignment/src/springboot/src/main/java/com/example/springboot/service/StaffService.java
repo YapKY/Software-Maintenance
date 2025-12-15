@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -42,6 +43,34 @@ public class StaffService {
         }
 
         return null; // Invalid password
+    }
+
+    /**
+     * Authenticate staff (alias for authenticate)
+     */
+    public Optional<Staff> authenticateStaff(String staffId, String password) {
+        try {
+            int passwordInt = Integer.parseInt(password);
+            Staff staff = authenticate(staffId, passwordInt);
+            return Optional.ofNullable(staff);
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Create staff (alias for addStaff)
+     */
+    public Staff createStaff(Staff staff) {
+        return addStaff(staff);
+    }
+
+    /**
+     * Get staff by document ID (alias for getStaffByStaffId)
+     */
+    public Optional<Staff> getStaffById(String id) {
+        Staff staff = getStaffByStaffId(id);
+        return Optional.ofNullable(staff);
     }
 
     /**
@@ -167,15 +196,31 @@ public class StaffService {
             if (!updatedStaff.getStfPass().matches("\\d{5}")) {
                 throw new IllegalArgumentException("Password must be exactly 5 digits");
             }
+            existingStaff.setStfPass(updatedStaff.getStfPass());
         }
 
-        // Update fields
-        updatedStaff.setStaffId(staffId); // Ensure staffId doesn't change
-        updatedStaff.setDocumentId(staffId); // Firestore document ID
+        // Merge only non-null fields from updatedStaff into existingStaff
+        if (updatedStaff.getName() != null && !updatedStaff.getName().isEmpty()) {
+            existingStaff.setName(updatedStaff.getName());
+        }
+        // Phone number can be null for staff
+        if (updatedStaff.getPhoneNumber() != null) {
+            if (updatedStaff.getPhoneNumber().isEmpty()) {
+                existingStaff.setPhoneNumber(null);
+            } else {
+                existingStaff.setPhoneNumber(updatedStaff.getPhoneNumber());
+            }
+        }
+        if (updatedStaff.getGender() != null && !updatedStaff.getGender().isEmpty()) {
+            existingStaff.setGender(updatedStaff.getGender());
+        }
+        if (updatedStaff.getPosition() != null && !updatedStaff.getPosition().isEmpty()) {
+            existingStaff.setPosition(updatedStaff.getPosition());
+        }
 
-        staffRepository.update(staffId, updatedStaff);
+        staffRepository.update(staffId, existingStaff);
 
-        return updatedStaff;
+        return existingStaff;
     }
 
     /**

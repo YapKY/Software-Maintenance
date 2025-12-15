@@ -257,18 +257,6 @@
   </head>
   <body>
     <div id="app">
-      <!-- Header -->
-      <div class="header">
-        <div class="header-content">
-          <h1>👤 Customer Profile</h1>
-          <div class="header-buttons">
-            <a href="/" class="back-btn">← Home</a>
-            <a href="/customer-list" class="back-btn">← All Customers</a>
-            <a href="/staff-list" class="back-btn">Staff Profiles →</a>
-          </div>
-        </div>
-      </div>
-
       <!-- Main Content -->
       <div class="profile-container">
         <div class="card">
@@ -349,11 +337,23 @@
 
               <!-- Buttons -->
               <div id="viewButtons" class="button-group">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/user-dashboard'"
+                >
+                  ← Dashboard
+                </button>
                 <button class="edit-btn" onclick="enableEdit()">
                   ✏️ Edit Profile
                 </button>
               </div>
               <div id="editButtons" class="button-group" style="display: none">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/user-dashboard'"
+                >
+                  ← Dashboard
+                </button>
                 <button class="cancel-btn" onclick="cancelEdit()">
                   Cancel
                 </button>
@@ -423,6 +423,7 @@
           displayCustomer(customer);
           hideElement("loading");
           showElement("customerData");
+          enableEdit();
         } catch (error) {
           hideElement("loading");
           showError(error.message);
@@ -434,7 +435,11 @@
         document.getElementById("viewName").textContent = customer.name;
         document.getElementById("viewEmail").textContent = customer.email;
         document.getElementById("viewPhone").textContent = customer.phoneNumber;
-        document.getElementById("viewGender").textContent = customer.gender;
+        const genderText = customer.gender
+          ? customer.gender.charAt(0).toUpperCase() +
+            customer.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("viewGender").textContent = genderText;
         document.getElementById("viewIcNo").textContent = customer.custIcNo;
       }
 
@@ -445,12 +450,18 @@
         showElement("editButtons");
         hideElement("successMessage");
 
-        document.getElementById("editName").value = currentCustomer.name;
-        document.getElementById("editEmail").value = currentCustomer.email;
+        document.getElementById("editName").value = currentCustomer.name || "";
+        document.getElementById("editEmail").value =
+          currentCustomer.email || "";
         document.getElementById("editPhone").value =
-          currentCustomer.phoneNumber;
-        document.getElementById("editGender").value = currentCustomer.gender;
-        document.getElementById("editIcNo").value = currentCustomer.custIcNo;
+          currentCustomer.phoneNumber || "";
+        const genderValue = currentCustomer.gender
+          ? currentCustomer.gender.charAt(0).toUpperCase() +
+            currentCustomer.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("editGender").value = genderValue;
+        document.getElementById("editIcNo").value =
+          currentCustomer.custIcNo || "";
       }
 
       function cancelEdit() {
@@ -533,12 +544,23 @@
 
         showElement("loading");
 
-        const updatedData = {
-          name: name,
-          email: email,
-          phoneNumber: phoneNumber,
-          gender: gender,
-        };
+        // Build updatedData with only changed fields
+        const updatedData = {};
+        if ((name || "") !== (currentCustomer.name || "")) {
+          updatedData.name = name;
+        }
+        if ((phoneNumber || "") !== (currentCustomer.phoneNumber || "")) {
+          updatedData.phoneNumber = phoneNumber;
+        }
+        const normalizedGender =
+          (gender || "").charAt(0).toUpperCase() +
+          (gender || "").slice(1).toLowerCase();
+        const currentNormalizedGender =
+          (currentCustomer.gender || "").charAt(0).toUpperCase() +
+          (currentCustomer.gender || "").slice(1).toLowerCase();
+        if (normalizedGender !== currentNormalizedGender) {
+          updatedData.gender = gender;
+        }
 
         try {
           const response = await fetch(
@@ -572,8 +594,8 @@
 
           const data = await response.json();
 
-          // Update currentCustomer with the response data
-          currentCustomer = { ...currentCustomer, ...data };
+          // Replace currentCustomer with clean response data to avoid accumulating unwanted fields
+          currentCustomer = data;
 
           displayCustomer(currentCustomer);
           cancelEdit();

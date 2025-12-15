@@ -129,8 +129,6 @@ public class ViewController {
         return "staff-detail";
     }
 
-}
-
     @GetMapping("/booking")
     public String bookingPage(
             @RequestParam(required = false) String flightId,
@@ -163,4 +161,5 @@ public class ViewController {
         model.addAttribute("customerId", customerId != null ? customerId : "cust-123");
         return "my-tickets";
     }
+
 }
