@@ -1,4 +1,4 @@
-package com.example.springboot.dto;
+package com.example.springboot.dto.request;
 
 import com.example.springboot.model.Passenger;
 

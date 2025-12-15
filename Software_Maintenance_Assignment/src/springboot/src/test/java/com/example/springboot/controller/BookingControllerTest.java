@@ -1,6 +1,6 @@
 package com.example.springboot.controller;
 
-import com.example.springboot.dto.BookingRequestDTO;
+import com.example.springboot.dto.request.BookingRequestDTO;
 import com.example.springboot.model.*;
 import com.example.springboot.service.*;
 import com.example.springboot.strategy.PricingContext;

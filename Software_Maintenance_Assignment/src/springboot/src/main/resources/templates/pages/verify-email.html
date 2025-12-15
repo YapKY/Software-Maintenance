@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Airline Ticketing</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>✈️ Airline Ticketing</h1>
+        </div>
+
+        <div id="loadingState" class="text-center">
+            <div class="spinner"></div>
+            <p>Verifying your email address...</p>
+        </div>
+
+        <div id="successState" style="display: none; text-align: center;">
+            <div class="success-icon" style="font-size: 48px; margin-bottom: 20px;">✅</div>
+            <h2>Email Verified!</h2>
+            <p id="successMessage">Your account has been successfully verified.</p>
+            <button id="btnProceedLogin" class="btn btn-primary mt-20">
+                Proceed to Login
+            </button>
+        </div>
+
+        <div id="errorState" style="display: none; text-align: center;">
+            <div class="error-icon" style="font-size: 48px; margin-bottom: 20px;">❌</div>
+            <h2>Verification Failed</h2>
+            <p id="errorMessage" class="mb-20">The verification link is invalid or expired.</p>
+            
+            <div id="resendSection">
+                <p>Enter your email to get a new link:</p>
+                <input type="email" id="resendEmail" placeholder="your@email.com" class="mb-10">
+                <button id="btnResend" class="btn btn-secondary">Resend Verification Email</button>
+            </div>
+            
+            <button id="btnBackLogin" class="btn btn-primary mt-20">
+                Back to Login
+            </button>
+        </div>
+    </div>
+
+    <script src="../js/config/config.js"></script>
+    <script src="../js/utils/helpers.js"></script>
+    <script src="../js/utils/storage.js"></script>
+    <script src="../js/api/authApi.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            // --- FIXED: Event Listeners ---
+            const btnProceed = document.getElementById('btnProceedLogin');
+            if (btnProceed) {
+                btnProceed.addEventListener('click', () => window.location.href = 'login.html');
+            }
+
+            const btnBack = document.getElementById('btnBackLogin');
+            if (btnBack) {
+                btnBack.addEventListener('click', () => window.location.href = 'login.html');
+            }
+
+            const btnResend = document.getElementById('btnResend');
+            if (btnResend) {
+                btnResend.addEventListener('click', handleResend);
+            }
+            // -----------------------------
+
+            // 1. Get Token from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (!token) {
+                showError('No verification token found.');
+                return;
+            }
+
+            // 2. Call Backend API
+            try {
+                const response = await AuthAPI.verifyEmail(token);
+                
+                if (response.success) {
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('successState').style.display = 'block';
+                    document.getElementById('successMessage').textContent = response.message;
+                } else {
+                    showError(response.message);
+                }
+            } catch (error) {
+                showError(error.message || 'Verification failed. Please try again.');
+            }
+        });
+
+        function showError(msg) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = msg;
+        }
+
+        async function handleResend() {
+            const email = document.getElementById('resendEmail').value;
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+            
+            const btn = document.getElementById('btnResend');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = 'Sending...';
+
+            try {
+                const response = await AuthAPI.resendVerification(email);
+                alert(response.message);
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+</html>
