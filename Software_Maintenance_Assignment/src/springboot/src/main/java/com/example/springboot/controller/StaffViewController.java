@@ -24,9 +24,8 @@ import java.util.concurrent.ExecutionException;
  * Spring MVC Controller for Staff Web Pages (Thymeleaf)
  * Handles traditional server-side rendering for staff dashboard
  * 
- * SUPPORTS TWO DASHBOARD VERSIONS:
- * 1. Old Dashboard (/staff/dashboard) - Form-based with page reloads
- * 2. New Dashboard (/staff/dashboard-rest) - REST API with AJAX
+ * MODIFIED VERSION: Login checks removed to allow direct access from Admin panel
+ * Dashboard and Reports can now be accessed without staff login session
  */
 @Controller
 @RequestMapping("/staff")
@@ -42,7 +41,7 @@ public class StaffViewController {
     private StaffService staffService;
 
     // ========================================
-    // AUTHENTICATION
+    // AUTHENTICATION (Optional - kept for backward compatibility)
     // ========================================
 
     /**
@@ -119,45 +118,56 @@ public class StaffViewController {
     }
 
     // ========================================
-    // OLD DASHBOARD (Form-based)
+    // DASHBOARD - NO LOGIN REQUIRED
     // ========================================
 
     /**
-     * Display Traditional Staff Dashboard (Form-based)
+     * Display Staff Dashboard
      * GET /staff/dashboard
      * 
-     * Uses: staff-dashboard.html
-     * Method: Form submissions with page reloads
+     * MODIFIED: Login check removed - accessible from Admin panel
+     * Staff info is optional now
      */
     @GetMapping("/dashboard")
     public String showDashboard(HttpSession session, Model model) {
-        // Check if logged in
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return "redirect:/staff/login";
-        }
-
         try {
+            // Get staff info if exists (optional)
+            Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
+            
             // Get all flights
             List<Flight> flights = flightService.getAllFlights();
             
-            model.addAttribute("staff", staff);
+            // Add attributes to model
+            if (staff != null) {
+                model.addAttribute("staff", staff);
+            } else {
+                // Provide default staff info for UI display
+                Map<String, Object> defaultStaff = new HashMap<>();
+                defaultStaff.put("name", "Admin User");
+                defaultStaff.put("position", "Administrator");
+                model.addAttribute("staff", defaultStaff);
+            }
+            
             model.addAttribute("flights", flights);
 
             return "staff-dashboard-rest";
 
         } catch (ExecutionException | InterruptedException e) {
             model.addAttribute("error", "Failed to load flights: " + e.getMessage());
-            model.addAttribute("staff", staff);
+            // Provide default staff info even on error
+            Map<String, Object> defaultStaff = new HashMap<>();
+            defaultStaff.put("name", "Admin User");
+            defaultStaff.put("position", "Administrator");
+            model.addAttribute("staff", defaultStaff);
             return "staff-dashboard-rest";
         }
     }
 
     /**
-     * Save Flight (Add or Update) - For OLD Dashboard
+     * Save Flight (Add or Update)
      * POST /staff/flights/save
      * 
-     * Used by: staff-dashboard.html (old form-based dashboard)
+     * MODIFIED: Login check removed
      */
     @PostMapping("/flights/save")
     public String saveFlight(
@@ -177,12 +187,6 @@ public class StaffViewController {
             @RequestParam(defaultValue = "false") boolean isEdit,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
-
-        // Check if logged in
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return "redirect:/staff/login";
-        }
 
         try {
             // Create flight object
@@ -224,57 +228,58 @@ public class StaffViewController {
     }
 
     // ========================================
-    // NEW DASHBOARD (REST API-based)
+    // REST DASHBOARD - NO LOGIN REQUIRED
     // ========================================
 
     /**
      * Display Modern REST API-based Staff Dashboard
      * GET /staff/dashboard-rest
      * 
-     * Uses: staff-dashboard-rest.html
-     * Method: AJAX calls to /api/flights endpoints
-     * Benefits: No page reloads, instant updates, better UX
+     * MODIFIED: Login check removed - accessible from Admin panel
      */
     @GetMapping("/dashboard-rest")
     public String showRestDashboard(HttpSession session, Model model) {
-        // Check if logged in
+        // Get staff info if exists (optional)
         Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return "redirect:/staff/login";
+        
+        if (staff != null) {
+            model.addAttribute("staff", staff);
+        } else {
+            // Provide default staff info for UI display
+            Map<String, Object> defaultStaff = new HashMap<>();
+            defaultStaff.put("name", "Admin User");
+            defaultStaff.put("position", "Administrator");
+            model.addAttribute("staff", defaultStaff);
         }
-
-        // Pass staff info to template
-        // Flights will be loaded via AJAX from /api/flights
-        model.addAttribute("staff", staff);
         
         return "staff-dashboard-rest";
     }
 
     // ========================================
-    // REPORTS (Works with both dashboards)
+    // REPORTS - NO LOGIN REQUIRED
     // ========================================
 
     /**
      * Display Sales Reports Page
      * GET /staff/reports
      * 
-     * Access: Manager ONLY
+     * MODIFIED: Login and Manager checks removed - accessible from Admin panel
      */
     @GetMapping("/reports")
     public String showReportsPage(HttpSession session, Model model) {
-        // Check if logged in
+        // Get staff info if exists (optional)
         Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return "redirect:/staff/login";
+        
+        if (staff != null) {
+            model.addAttribute("staff", staff);
+        } else {
+            // Provide default staff info for UI display
+            Map<String, Object> defaultStaff = new HashMap<>();
+            defaultStaff.put("name", "Admin User");
+            defaultStaff.put("position", "Manager");
+            model.addAttribute("staff", defaultStaff);
         }
-
-        // Check if Manager
-        String position = (String) staff.get("position");
-        if (!"Manager".equalsIgnoreCase(position)) {
-            return "redirect:/staff/dashboard";
-        }
-
-        model.addAttribute("staff", staff);
+        
         return "staff-reports";
     }
 
@@ -282,22 +287,10 @@ public class StaffViewController {
      * Download Sales Report PDF
      * GET /staff/reports/download
      * 
-     * Access: Manager ONLY
+     * MODIFIED: Login and Manager checks removed - accessible from Admin panel
      */
     @GetMapping("/reports/download")
     public ResponseEntity<byte[]> downloadSalesReport(HttpSession session) {
-        // Check if logged in
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        // Check if Manager
-        String position = (String) staff.get("position");
-        if (!"Manager".equalsIgnoreCase(position)) {
-            return ResponseEntity.status(403).build();
-        }
-
         try {
             byte[] pdfBytes = pdfReportService.generateSalesReportPdf();
 
@@ -324,13 +317,10 @@ public class StaffViewController {
      * Home/Root redirect
      * GET /staff or GET /staff/
      * 
-     * Redirects to dashboard if logged in, otherwise to login
+     * MODIFIED: Always redirects to dashboard (no login required)
      */
     @GetMapping({"", "/"})
     public String home(HttpSession session) {
-        if (session.getAttribute("staff") != null) {
-            return "redirect:/staff/dashboard";
-        }
-        return "redirect:/staff/login";
+        return "redirect:/staff/dashboard";
     }
 }

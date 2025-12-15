@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -49,18 +51,18 @@ public class StaffRepository {
      */
     public List<Staff> findAll() throws ExecutionException, InterruptedException {
         List<Staff> staffList = new ArrayList<>();
-        
+
         Firestore firestore = firestoreRepository.getFirestore();
         ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME).get();
         QuerySnapshot querySnapshot = future.get();
-        
+
         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
             Staff staff = documentToStaff(document);
             if (staff != null) {
                 staffList.add(staff);
             }
         }
-        
+
         return staffList;
     }
 
@@ -75,13 +77,13 @@ public class StaffRepository {
         try {
             // Use staffId as the document ID for fast lookup
             String docId = staff.getStaffId();
-            
+
             // Save to Firestore using FirestoreRepository
             firestoreRepository.saveWithId(COLLECTION_NAME, docId, staff);
-            
+
             // Set the documentId
             staff.setDocumentId(docId);
-            
+
             return staff;
         } catch (Exception e) {
             throw new RuntimeException("Failed to save staff: " + e.getMessage(), e);
@@ -92,16 +94,45 @@ public class StaffRepository {
      * Update staff information
      * 
      * @param staffId The staff ID to update
-     * @param staff The updated staff object
+     * @param staff   The updated staff object
      * @throws ExecutionException
      * @throws InterruptedException
      */
     public void update(String staffId, Staff staff) throws ExecutionException, InterruptedException {
         try {
             Firestore firestore = firestoreRepository.getFirestore();
+
+            // Build a map with only the fields we want to save to Firestore
+            // This prevents unwanted fields (documentId, fullName, manager, controller)
+            // from being saved
+            Map<String, Object> updateData = new HashMap<>();
+
+            // Only include actual Staff fields, not computed properties
+            if (staff.getStaffId() != null) {
+                updateData.put("staffId", staff.getStaffId());
+            }
+            if (staff.getPosition() != null) {
+                updateData.put("position", staff.getPosition());
+            }
+            if (staff.getName() != null) {
+                updateData.put("name", staff.getName());
+            }
+            if (staff.getEmail() != null) {
+                updateData.put("email", staff.getEmail());
+            }
+            // Phone number can be null
+            updateData.put("phoneNumber", staff.getPhoneNumber());
+
+            if (staff.getGender() != null) {
+                updateData.put("gender", staff.getGender());
+            }
+
+            // Always set updatedAt timestamp
+            updateData.put("updatedAt", java.time.Instant.now().toString());
+
             firestore.collection(COLLECTION_NAME)
                     .document(staffId)
-                    .set(staff)
+                    .set(updateData, SetOptions.merge())
                     .get();
         } catch (Exception e) {
             throw new RuntimeException("Failed to update staff: " + e.getMessage(), e);
@@ -152,17 +183,17 @@ public class StaffRepository {
      */
     public List<Staff> findByPosition(String position) throws ExecutionException, InterruptedException {
         List<Staff> staffList = new ArrayList<>();
-        
+
         Query query = firestoreRepository.getCollectionByField(COLLECTION_NAME, "position", position);
         QuerySnapshot querySnapshot = query.get().get();
-        
+
         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
             Staff staff = documentToStaff(document);
             if (staff != null) {
                 staffList.add(staff);
             }
         }
-        
+
         return staffList;
     }
 

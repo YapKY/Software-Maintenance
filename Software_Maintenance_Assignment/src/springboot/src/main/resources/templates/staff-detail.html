@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Profile - Airline Booking System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: #f9fafb;
+        min-height: 100vh;
+      }
+
+      #app {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #ec4899 0%, #be123c 100%);
+        color: white;
+        padding: 24px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+      }
+
+      .header-buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s;
+        display: inline-block;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .profile-container {
+        max-width: 1000px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+      }
+
+      .card-header {
+        background: linear-gradient(135deg, #ec4899 0%, #be123c 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .card-body {
+        padding: 32px;
+      }
+
+      .loading,
+      .error {
+        text-align: center;
+        padding: 40px;
+        font-size: 1.125rem;
+        color: #6b7280;
+      }
+
+      .error {
+        color: #dc2626;
+      }
+
+      .profile-title {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .profile-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+      }
+
+      .profile-info h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .position-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-block;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .edit-btn,
+      .save-btn,
+      .cancel-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .edit-btn {
+        background: #ec4899;
+        color: white;
+      }
+
+      .edit-btn:hover {
+        background: #db2777;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .save-btn {
+        background: #10b981;
+        color: white;
+      }
+
+      .save-btn:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .cancel-btn {
+        background: #6b7280;
+        color: white;
+      }
+
+      .cancel-btn:hover {
+        background: #4b5563;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-group label {
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #f5576c;
+      }
+
+      .form-group input:disabled {
+        background: #f5f5f5;
+        cursor: not-allowed;
+      }
+
+      .view-mode .value {
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        color: #333;
+        min-height: 45px;
+        display: flex;
+        align-items: center;
+      }
+
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        border: 1px solid #c3e6cb;
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .profile-container {
+          padding: 20px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Main Content -->
+      <div class="profile-container">
+        <div class="card">
+          <div id="loading" class="loading" style="display: none">
+            ⏳ Loading profile...
+          </div>
+          <div id="error" class="error" style="display: none"></div>
+
+          <div id="staffData" style="display: none">
+            <!-- Card Header with Profile Info -->
+            <div class="card-header">
+              <div class="profile-title">
+                <div class="profile-icon">👔</div>
+                <div class="profile-info">
+                  <div>
+                    <span class="position-badge" id="positionBadge"></span>
+                  </div>
+                  <h2 id="displayName"></h2>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Body with Form -->
+            <div class="card-body">
+              <div
+                id="successMessage"
+                class="success-message"
+                style="display: none"
+              ></div>
+
+              <!-- View Mode -->
+              <div id="viewMode" class="form-grid view-mode">
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <div class="value" id="viewName"></div>
+                </div>
+                <div class="form-group">
+                  <label>Email Address</label>
+                  <div class="value" id="viewEmail"></div>
+                </div>
+                <div class="form-group">
+                  <label>Phone Number</label>
+                  <div class="value" id="viewPhone"></div>
+                </div>
+                <div class="form-group">
+                  <label>Gender</label>
+                  <div class="value" id="viewGender"></div>
+                </div>
+                <div class="form-group">
+                  <label>Position</label>
+                  <div class="value" id="viewPosition"></div>
+                </div>
+              </div>
+
+              <!-- Edit Mode -->
+              <div id="editMode" class="form-grid" style="display: none">
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <input type="text" id="editName" />
+                </div>
+                <div class="form-group">
+                  <label>Email Address</label>
+                  <input type="email" id="editEmail" disabled />
+                </div>
+                <div class="form-group">
+                  <label>Phone Number</label>
+                  <input type="tel" id="editPhone" />
+                </div>
+                <div class="form-group">
+                  <label>Gender</label>
+                  <select id="editGender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Position</label>
+                  <input type="text" id="editPosition" />
+                </div>
+              </div>
+
+              <!-- Buttons -->
+              <div id="viewButtons" class="button-group">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/admin-dashboard'"
+                >
+                  ← Dashboard
+                </button>
+                <button class="edit-btn" onclick="enableEdit()">
+                  ✏️ Edit Profile
+                </button>
+              </div>
+              <div id="editButtons" class="button-group" style="display: none">
+                <button
+                  class="cancel-btn"
+                  onclick="window.location.href='/pages/admin-dashboard'"
+                >
+                  ← Dashboard
+                </button>
+                <button class="cancel-btn" onclick="cancelEdit()">
+                  Cancel
+                </button>
+                <button class="save-btn" onclick="saveProfile()">
+                  💾 Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentStaff = null;
+      const API_BASE =
+        window.location.protocol === "file:"
+          ? "http://localhost:8081/api"
+          : "/api";
+
+      // Get email from sessionStorage
+      const staffEmail = sessionStorage.getItem("staffEmail");
+
+      // Security: Redirect to list if no email in session (prevents direct URL access)
+      if (!staffEmail) {
+        window.location.href = "/staff-list";
+      }
+
+      // Load staff on page load
+      window.addEventListener("DOMContentLoaded", loadStaff);
+
+      function showElement(id) {
+        document.getElementById(id).style.display = "block";
+      }
+
+      function hideElement(id) {
+        document.getElementById(id).style.display = "none";
+      }
+
+      async function loadStaff() {
+        if (!staffEmail) {
+          showError("No staff email provided");
+          return;
+        }
+
+        showElement("loading");
+        hideElement("error");
+        hideElement("successMessage");
+        hideElement("staffData");
+
+        try {
+          // Get all staff and find by email
+          const response = await fetch(`${API_BASE}/staff`);
+
+          if (!response.ok) {
+            throw new Error("Failed to load staff");
+          }
+
+          const staffList = await response.json();
+          const staff = staffList.find((s) => s.email === staffEmail);
+
+          if (!staff) {
+            throw new Error("Staff not found");
+          }
+
+          currentStaff = staff;
+          displayStaff(staff);
+          hideElement("loading");
+          showElement("staffData");
+          enableEdit();
+        } catch (error) {
+          hideElement("loading");
+          showError(error.message);
+        }
+      }
+
+      function displayStaff(staff) {
+        document.getElementById("displayName").textContent = staff.name;
+        document.getElementById("positionBadge").textContent = staff.position;
+        document.getElementById("viewName").textContent = staff.name;
+        document.getElementById("viewEmail").textContent = staff.email;
+        document.getElementById("viewPhone").textContent = staff.phoneNumber;
+        const genderText = staff.gender
+          ? staff.gender.charAt(0).toUpperCase() +
+            staff.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("viewGender").textContent = genderText;
+        document.getElementById("viewPosition").textContent = staff.position;
+      }
+
+      function enableEdit() {
+        hideElement("viewMode");
+        hideElement("viewButtons");
+        showElement("editMode");
+        showElement("editButtons");
+        hideElement("successMessage");
+
+        document.getElementById("editName").value = currentStaff.name || "";
+        document.getElementById("editEmail").value = currentStaff.email || "";
+        document.getElementById("editPhone").value =
+          currentStaff.phoneNumber || "";
+        const genderValue = currentStaff.gender
+          ? currentStaff.gender.charAt(0).toUpperCase() +
+            currentStaff.gender.slice(1).toLowerCase()
+          : "";
+        document.getElementById("editGender").value = genderValue;
+        document.getElementById("editPosition").value =
+          currentStaff.position || "";
+      }
+
+      function cancelEdit() {
+        showElement("viewMode");
+        showElement("viewButtons");
+        hideElement("editMode");
+        hideElement("editButtons");
+      }
+
+      function validateName(name) {
+        if (!name || name.trim() === "") {
+          return "Name cannot be empty";
+        }
+        if (!/^[a-zA-Z\s]+$/.test(name)) {
+          return "Name must contain only letters and spaces";
+        }
+        return null;
+      }
+
+      function validateEmail(email) {
+        if (!email || email.trim() === "") {
+          return "Email cannot be empty";
+        }
+        if (!/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) {
+          return "Please enter a valid email address";
+        }
+        return null;
+      }
+
+      function validatePhoneNumber(phoneNumber) {
+        // Phone number is optional for staff
+        if (!phoneNumber || phoneNumber.trim() === "") {
+          return null;
+        }
+        if (!/^\d{3}-\d{7,8}$/.test(phoneNumber)) {
+          return "Phone number must be in format XXX-XXXXXXX or XXX-XXXXXXXX";
+        }
+        return null;
+      }
+
+      async function saveProfile() {
+        hideElement("error");
+        hideElement("successMessage");
+
+        const name = document.getElementById("editName").value;
+        const email = document.getElementById("editEmail").value;
+        const phoneNumber = document.getElementById("editPhone").value;
+        const gender = document.getElementById("editGender").value;
+        const position = document.getElementById("editPosition").value;
+
+        // Validate inputs
+        let validationError = validateName(name);
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
+        validationError = validateEmail(email);
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
+        validationError = validatePhoneNumber(phoneNumber);
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
+        // Check if there are any changes
+        if (
+          (name || "") === (currentStaff.name || "") &&
+          (email || "") === (currentStaff.email || "") &&
+          (phoneNumber || "") === (currentStaff.phoneNumber || "") &&
+          (gender || "") === (currentStaff.gender || "") &&
+          (position || "") === (currentStaff.position || "")
+        ) {
+          showError(
+            "No changes detected. Update at least one field before saving."
+          );
+          return;
+        }
+
+        showElement("loading");
+
+        // Build updatedData with only changed fields
+        const updatedData = {};
+        if ((name || "") !== (currentStaff.name || "")) {
+          updatedData.name = name;
+        }
+        // Allow phone number to be null/empty for staff
+        if ((phoneNumber || "") !== (currentStaff.phoneNumber || "")) {
+          updatedData.phoneNumber = phoneNumber || null;
+        }
+        const normalizedGender =
+          (gender || "").charAt(0).toUpperCase() +
+          (gender || "").slice(1).toLowerCase();
+        const currentNormalizedGender =
+          (currentStaff.gender || "").charAt(0).toUpperCase() +
+          (currentStaff.gender || "").slice(1).toLowerCase();
+        if (normalizedGender !== currentNormalizedGender) {
+          updatedData.gender = gender;
+        }
+        if ((position || "") !== (currentStaff.position || "")) {
+          updatedData.position = position;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/staff/${currentStaff.staffId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedData),
+            }
+          );
+
+          if (!response.ok) {
+            let errMsg = `Failed to update profile (status ${response.status})`;
+            try {
+              const errBody = await response.json();
+              if (errBody && (errBody.message || errBody.error)) {
+                errMsg = errBody.message || errBody.error;
+              } else if (errBody && errBody.staff && errBody.message) {
+                errMsg = errBody.message; // handle wrapper responses
+              }
+            } catch (e) {
+              try {
+                const txt = await response.text();
+                if (txt) errMsg = txt;
+              } catch (e2) {}
+            }
+            throw new Error(errMsg);
+          }
+
+          const data = await response.json();
+
+          // Replace currentStaff with clean response data to avoid accumulating unwanted fields
+          currentStaff = data;
+
+          displayStaff(currentStaff);
+          cancelEdit();
+          hideElement("loading");
+          showSuccess("Profile updated successfully!");
+
+          setTimeout(() => {
+            hideElement("successMessage");
+          }, 3000);
+        } catch (error) {
+          hideElement("loading");
+          showError(error.message);
+        }
+      }
+
+      function showError(message) {
+        document.getElementById("error").textContent = "❌ " + message;
+        showElement("error");
+      }
+
+      function showSuccess(message) {
+        document.getElementById("successMessage").textContent = "✅ " + message;
+        showElement("successMessage");
+      }
+    </script>
+  </body>
+</html>
