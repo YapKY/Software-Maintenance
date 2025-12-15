@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Airline Booking System - Redirecting...</title>
-    
+
     <script src="/js/config/config.js"></script>
     <script src="/js/utils/storage.js"></script>
     <script src="/js/utils/helpers.js"></script>
@@ -33,38 +33,42 @@
         margin: 0 auto 20px;
       }
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
     </style>
 
     <script>
-        // Immediate Auth Check
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user has a valid access token in LocalStorage
-            if (Storage.isAuthenticated()) {
-                const role = Storage.getUserRole();
-                
-                // Redirect to dashboard based on Role
-                switch(role) {
-                    case 'USER':
-                        window.location.href = '/pages/user-dashboard.html';
-                        break;
-                    case 'ADMIN':
-                        window.location.href = '/pages/admin-dashboard.html';
-                        break;
-                    case 'SUPERADMIN':
-                        window.location.href = '/pages/superadmin-dashboard.html';
-                        break;
-                    default:
-                        // Fallback if role is unknown
-                        window.location.href = '/pages/login.html';
-                }
-            } else {
-                // Not authenticated -> Redirect to Login Page
-                window.location.href = '/pages/login.html';
-            }
-        });
+      // Immediate Auth Check
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check if user has a valid access token in LocalStorage
+        if (Storage.isAuthenticated()) {
+          const role = Storage.getUserRole();
+
+          // Redirect to dashboard based on Role
+          switch (role) {
+            case "USER":
+              window.location.href = "/pages/user-dashboard.html";
+              break;
+            case "ADMIN":
+              window.location.href = "/pages/admin-dashboard.html";
+              break;
+            case "SUPERADMIN":
+              window.location.href = "/pages/superadmin-dashboard.html";
+              break;
+            default:
+              // Fallback if role is unknown
+              window.location.href = "/pages/login.html";
+          }
+        } else {
+          // Not authenticated -> Redirect to Login Page
+          window.location.href = "/pages/login.html";
+        }
+      });
     </script>
   </head>
   <body>

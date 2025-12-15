@@ -136,10 +136,19 @@ const UserDashboard = {
         strengthDiv.innerHTML = `<small style="color: ${color}; font-weight: 600;">${message}</small>`;
     },
     
-    handleLogout: async function() { await AuthAPI.logout(); }
+    handleLogout: async function() { await AuthAPI.logout(); },
+
+    viewBookings: function() {
+        if (this.currentUser && this.currentUser.id) {
+            window.location.href = `/my-tickets?customerId=${this.currentUser.id}`;
+        } else {
+            Helpers.showError('User profile not loaded. Please try again.');
+        }
+    }
 };
 
 window.onload = function() { UserDashboard.init(); };
 function handleLogout() { UserDashboard.handleLogout(); }
 function showChangePasswordModal() { UserDashboard.showChangePasswordModal(); }
 function hideChangePasswordModal() { UserDashboard.hideChangePasswordModal(); }
+function viewBookings() { UserDashboard.viewBookings(); }

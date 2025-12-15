@@ -135,15 +135,44 @@
     </div>
 </div>
 
-<script>
-    const CUSTOMER_ID = /*[[${customerId}]]*/ "cust-123";
+<script src="/js/config/config.js"></script>
+<script src="/js/utils/storage.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/api/userApi.js"></script>
 
-    // Load tickets on page load
-    document.addEventListener('DOMContentLoaded', loadTickets);
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let customerId = urlParams.get('customerId') || /*[[${customerId}]]*/ "";
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        // ✅ NEW: Logic to find the real user ID
+        if (!customerId) {
+            if (typeof Storage !== 'undefined' && Storage.isAuthenticated()) {
+                try {
+                    const profile = await UserAPI.getUserDashboard();
+                    if (profile && profile.id) {
+                        customerId = profile.id;
+                        console.log("Loaded tickets for user:", customerId);
+                    }
+                } catch (e) {
+                    console.error("Failed to load user profile", e);
+                }
+            }
+        }
+
+        // If we still don't have an ID, redirect to login
+        if (!customerId) {
+            alert("Please login to view your tickets.");
+            window.location.href = "/pages/login.html";
+            return;
+        }
+
+        loadTickets();
+    });
 
     async function loadTickets() {
         try {
-            const response = await fetch(`/api/tickets/customer/${CUSTOMER_ID}`);
+            const response = await fetch(`/api/tickets/customer/${customerId}`);    
             const data = await response.json();
 
             document.getElementById('loadingState').style.display = 'none';
