@@ -1,0 +1,15 @@
+package com.example.springboot.exception;
+
+/**
+ * Exception thrown when user account is not found
+ */
+public class UserNotFoundException extends RuntimeException {
+    
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+    
+    public UserNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}

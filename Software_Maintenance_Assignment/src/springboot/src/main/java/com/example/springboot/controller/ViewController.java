@@ -8,19 +8,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * View Controller - Handles page rendering for the Profile Module
- * Following MVC Architecture:
- * - Controller Layer: Routes requests to appropriate views
- * - View Layer: Thymeleaf templates (HTML files)
- * - Model Layer: Data passed to views (entity objects)
- * 
- * This controller serves the HTML pages for the frontend UI.
- * REST controllers handle the API endpoints for data operations.
  */
 @Controller
 public class ViewController {
 
     /**
-     * Home page - Landing page with navigation to customer and staff profiles
+     * Home page - Landing page with authentication check
      * URL: http://localhost:8081/
      */
     @GetMapping("/")
@@ -29,61 +22,48 @@ public class ViewController {
     }
 
     /**
+     * Generic handler for pages in the 'pages' subfolder (e.g., login, dashboards)
+     * Maps /pages/login.html -> templates/pages/login.html
+     */
+    @GetMapping("/pages/{page}")
+    public String showPage(@PathVariable String page) {
+        // Strip .html extension if present to match Thymeleaf template name
+        if (page != null && page.endsWith(".html")) {
+            page = page.substring(0, page.length() - 5);
+        }
+        return "pages/" + page;
+    }
+
+    /**
      * Customer profile page
      * URL: http://localhost:8081/customer-profile
-     * 
-     * @param customerId Optional customer ID parameter (temporary - will be
-     *                   replaced with session)
-     * @param model      Spring Model object to pass data to view
-     * @return View name "customer-profile"
      */
     @GetMapping("/customer-profile")
     public String customerProfile(
             @RequestParam(value = "id", required = false, defaultValue = "1") Integer customerId,
             Model model) {
-
-        // Pass the customer ID to the view
-        // In future, this will be retrieved from logged-in user session
         model.addAttribute("customerId", customerId);
-
         return "customer-profile";
     }
 
     /**
      * Staff profile page
      * URL: http://localhost:8081/staff-profile
-     * 
-     * @param staffId Optional staff ID parameter (temporary - will be replaced with
-     *                session)
-     * @param model   Spring Model object to pass data to view
-     * @return View name "staff-profile"
      */
     @GetMapping("/staff-profile")
     public String staffProfile(
             @RequestParam(value = "id", required = false, defaultValue = "1") Integer staffId,
             Model model) {
-
-        // Pass the staff ID to the view
-        // In future, this will be retrieved from logged-in user session
         model.addAttribute("staffId", staffId);
-
         return "staff-profile";
     }
 
-    /**
-     * Alternative URL pattern for customer profile with path variable
-     * URL: http://localhost:8081/customer/{id}
-     */
     @GetMapping("/customer/{id}")
     public String customerProfileById(@PathVariable Integer id, Model model) {
         model.addAttribute("customerId", id);
         return "customer-profile";
     }
 
-    /**
-     * Alternative URL pattern for staff profile with path variable
-     * URL: http://localhost:8081/staff/{id}
-     */
     @GetMapping("/staff/{id}")
     public String staffProfileById(@PathVariable Integer id, Model model) {
         model.addAttribute("staffId", id);
@@ -147,5 +127,40 @@ public class ViewController {
             return "redirect:/staff-list";
         }
         return "staff-detail";
+    }
+
+}
+
+    @GetMapping("/booking")
+    public String bookingPage(
+            @RequestParam(required = false) String flightId,
+            @RequestParam(required = false) String customerId,
+            Model model) {
+        model.addAttribute("flightId", flightId != null ? flightId : "");
+        model.addAttribute("customerId", customerId != null ? customerId : "GUEST");
+        return "booking";
+    }
+
+    @GetMapping("/payment")
+    public String paymentPage() {
+        return "payment";
+    }
+
+    @GetMapping("/confirmation")
+    public String confirmationPage() {
+        return "confirmation";
+    }
+
+    @GetMapping("/search-flight")
+    public String searchFlightPage() {
+        return "search-flight";
+    }
+
+    @GetMapping("/my-tickets")
+    public String myTicketsPage(
+            @RequestParam(required = false) String customerId,
+            Model model) {
+        model.addAttribute("customerId", customerId != null ? customerId : "cust-123");
+        return "my-tickets";
     }
 }

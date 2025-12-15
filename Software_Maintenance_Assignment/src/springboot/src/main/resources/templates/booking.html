@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Select Seat & Book</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .booking-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .back-btn {
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #f0f0f0;
+        }
+        .flight-info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .seat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 60px); 
+            gap: 12px; 
+            justify-content: center; 
+            margin: 20px 0; 
+        }
+        .seat { 
+            width: 60px; 
+            height: 60px; 
+            border: 2px solid #ccc; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        /* ✅ FIXED: Business Class Styling */
+        .seat.business { 
+            background-color: #fff3e0;
+            color: #e65100;
+            border-color: #ffb74d;
+        }
+        .seat.business::after {
+            content: '★';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 12px;
+            color: #ff9800;
+        }
+        .seat.business:hover {
+            background-color: #ffe0b2;
+            transform: scale(1.05);
+        }
+        
+        /* Economy Class Styling */
+        .seat.economy { 
+            background-color: #e8f5e9; 
+            color: #2e7d32;
+            border-color: #81c784;
+        }
+        .seat.economy:hover {
+            background-color: #c8e6c9;
+            transform: scale(1.05);
+        }
+        
+        .seat.booked { 
+            background-color: #ffebee; 
+            color: #c62828;
+            border-color: #ef5350;
+            cursor: not-allowed; 
+        }
+        .seat.selected { 
+            background-color: #667eea; 
+            color: white; 
+            border-color: #5568d3;
+            transform: scale(1.1);
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* ✅ FIXED: Updated legend */
+        .seat-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-box {
+            width: 25px;
+            height: 25px;
+            border: 2px solid;
+            border-radius: 4px;
+        }
+        input.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        input.is-valid {
+            border-color: #28a745 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="booking-container">
+    <a href="/search-flight" class="back-btn">← Back to Search</a>
+
+    <!-- Flight Information Card -->
+    <div class="flight-info-card" id="flightInfoCard" style="display: none;">
+        <h4 style="color: #667eea; margin-bottom: 15px;">✈️ Flight Details</h4>
+        <div id="flightInfoContent"></div>
+    </div>
+
+    <div class="row">
+        <!-- Seat Selection -->
+        <div class="col-md-7">
+            <div class="card p-4">
+                <h4 class="text-center mb-3">Select Your Seat</h4>
+                
+                <!-- ✅ FIXED: Updated Legend -->
+                <div class="seat-legend">
+                    <div class="legend-item">
+                        <div class="legend-box" style="background:#e8f5e9;border-color:#81c784;"></div>
+                        <small>Economy</small>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box" style="background:#fff3e0;border-color:#ffb74d;position:relative;">
+                            <span style="position:absolute;top:-2px;right:2px;font-size:10px;">★</span>
+                        </div>
+                        <small>Business ★</small>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box" style="background:#ffebee;border-color:#ef5350;"></div>
+                        <small>Booked</small>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box" style="background:#667eea;"></div>
+                        <small>Selected</small>
+                    </div>
+                </div>
+                
+                <div id="loadingSeats" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading seats...</p>
+                </div>
+                
+                <div id="seat-map-container" class="text-center" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Passenger Details Form -->
+        <!-- Passenger Details Form -->
+        <div class="col-md-5">
+            <div class="card p-4">
+                <h4 class="mb-3">Passenger Details</h4>
+                <form id="bookingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" id="fullName" class="form-control" 
+                            placeholder="e.g., John Doe" required
+                            oninput="validateFullName()">
+                        <div class="invalid-feedback" id="fullNameError"></div>
+                        <small class="text-muted">Minimum 2 characters</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Passport Number <span class="text-danger">*</span></label>
+                        <input type="text" id="passport" class="form-control" 
+                            placeholder="A12345678" required
+                            oninput="validatePassport()" maxlength="9">
+                        <div class="invalid-feedback" id="passportError"></div>
+                        <small class="text-muted">Format: One uppercase letter + 8 digits (e.g., A12345678)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email (For Ticket) <span class="text-danger">*</span></label>
+                        <input type="email" id="email" class="form-control" 
+                            placeholder="john@example.com" required
+                            oninput="validateEmail()">
+                        <div class="invalid-feedback" id="emailError"></div>
+                        <small class="text-muted">Valid email address required</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                        <input type="text" id="phone" class="form-control" 
+                            placeholder="012-3456789" required
+                            oninput="validatePhone()" maxlength="12">
+                        <div class="invalid-feedback" id="phoneError"></div>
+                        <small class="text-muted">Format: XXX-XXXXXXX (e.g., 012-3456789)</small>
+                    </div>
+                    
+                    <!-- Selected Seat Info -->
+                    <div id="selectedSeatInfo" style="display: none;" class="alert alert-info">
+                        <strong>Selected Seat:</strong> <span id="selectedSeatDisplay">-</span><br>
+                        <strong>Class:</strong> <span id="selectedClassDisplay">-</span>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5>Total Price:</h5>
+                        <h5 id="priceDisplay" style="color: #667eea;">RM 0.00</h5>
+                    </div>
+                    
+                    <input type="hidden" id="selectedSeatId">
+                    <input type="hidden" id="selectedAmount">
+                    <input type="hidden" id="selectedSeatNumber">
+                    <input type="hidden" id="selectedSeatClass">
+                    
+                    <button type="button" class="btn btn-primary w-100" 
+                            onclick="proceedToPayment()" disabled id="proceedBtn">
+                        Select a seat to continue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const FLIGHT_ID = urlParams.get('flightId') || /*[[${flightId}]]*/ "";
+    const CUSTOMER_ID = urlParams.get('customerId') || /*[[${customerId}]]*/ "GUEST";
+
+    let currentFlight = null;
+
+    document.addEventListener("DOMContentLoaded", async function() {
+        if (!FLIGHT_ID) {
+            alert("No flight selected. Redirecting to search page...");
+            window.location.href = "/search-flight";
+            return;
+        }
+        try {
+            await loadFlightInfo();
+            await loadSeats();
+        } catch (error) {
+            alert("Error loading flight data: " + error.message);
+        }
+    });
+
+    async function loadFlightInfo() {
+        try {
+            const response = await fetch(`/api/flights/by-flight-id/${FLIGHT_ID}`);
+            const data = await response.json();
+
+            if (data.success) {
+                currentFlight = data.flight;
+                displayFlightInfo(currentFlight);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error("Error loading flight info:", error);
+        }
+    }
+
+    function displayFlightInfo(flight) {
+        const infoCard = document.getElementById('flightInfoCard');
+        const infoContent = document.getElementById('flightInfoContent');
+
+        infoContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Flight ID:</strong> ${flight.flightId}</p>
+                    <p><strong>Route:</strong> ${flight.departureCountry} → ${flight.arrivalCountry}</p>
+                    <p><strong>Departure:</strong> ${flight.departureDate} at ${formatTime(flight.departureTime)}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Arrival:</strong> ${flight.arrivalDate} at ${formatTime(flight.arrivalTime)}</p>
+                    <p><strong>Boarding:</strong> ${formatTime(flight.boardingTime)}</p>
+                    <p><strong>Plane:</strong> ${flight.planeNo}</p>
+                </div>
+            </div>
+        `;
+
+        infoCard.style.display = 'block';
+    }
+
+    async function loadSeats() {
+        try {
+            const response = await fetch(`/api/booking/seats/${FLIGHT_ID}`);
+            const data = await response.json();
+
+            document.getElementById('loadingSeats').style.display = 'none';
+
+            if (data.success) {
+                renderSeats(data.seats);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            document.getElementById('loadingSeats').innerHTML = 
+                `<p class="text-danger">Failed to load seats: ${error.message}</p>`;
+        }
+    }
+
+    function renderSeats(seats) {
+        const container = document.getElementById("seat-map-container");
+        container.innerHTML = '<div class="seat-grid" id="grid"></div>';
+        container.style.display = 'block';
+        
+        const grid = document.getElementById("grid");
+
+        seats.sort((a, b) => a.seatNumber - b.seatNumber);
+
+        seats.forEach(seat => {
+            const div = document.createElement("div");
+            
+            const seatClass = seat.typeOfSeat === 'Business' ? 'business' : 'economy';
+            const statusClass = seat.statusSeat === 'Booked' ? 'booked' : seatClass;
+            
+            div.className = `seat ${statusClass}`;
+            div.innerText = seat.seatNumber;
+            
+            if (seat.statusSeat !== 'Booked') {
+                div.onclick = () => selectSeat(div, seat);
+            }
+            
+            grid.appendChild(div);
+        });
+    }
+
+    function selectSeat(element, seat) {
+        document.querySelectorAll('.seat.selected').forEach(el => {
+            el.classList.remove('selected');
+            if (el.dataset.originalClass) {
+                el.classList.add(el.dataset.originalClass);
+            }
+        });
+        
+        const originalClass = seat.typeOfSeat === 'Business' ? 'business' : 'economy';
+        element.dataset.originalClass = originalClass;
+        
+        element.classList.remove(originalClass);
+        element.classList.add('selected');
+        
+        document.getElementById("selectedSeatId").value = seat.documentId;
+        document.getElementById("selectedSeatNumber").value = seat.seatNumber;
+        document.getElementById("selectedSeatClass").value = seat.typeOfSeat;
+        
+        let price = 0;
+        if (currentFlight) {
+            price = seat.typeOfSeat === 'Business' 
+                ? currentFlight.businessPrice 
+                : currentFlight.economyPrice;
+        } else {
+            price = seat.typeOfSeat === 'Business' ? 500.00 : 150.00;
+        }
+        
+        document.getElementById("selectedAmount").value = price;
+        document.getElementById("priceDisplay").innerText = "RM " + price.toFixed(2);
+        
+        document.getElementById("selectedSeatDisplay").innerText = seat.seatNumber;
+        document.getElementById("selectedClassDisplay").innerText = seat.typeOfSeat;
+        document.getElementById("selectedSeatInfo").style.display = 'block';
+        
+        const proceedBtn = document.getElementById("proceedBtn");
+        proceedBtn.disabled = false;
+        proceedBtn.innerText = "Proceed to Payment →";
+    }
+
+    // ✅ UPDATED: Validate passenger data before proceeding
+    function proceedToPayment() {
+        const seatId = document.getElementById("selectedSeatId").value;
+        if (!seatId) { 
+            showError("Please select a seat!");
+            return; 
+        }
+
+        // Get form values
+        const fullName = document.getElementById("fullName").value.trim();
+        const passport = document.getElementById("passport").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+
+        // ✅ VALIDATION: Full Name
+        if (!fullName || fullName.length < 2) {
+            showError("Please enter a valid full name (at least 2 characters)");
+            document.getElementById("fullName").focus();
+            return;
+        }
+
+        // ✅ VALIDATION: Passport (must be [A-Z]\d{8} format)
+        const passportRegex = /^[A-Z]\d{8}$/;
+        if (!passportRegex.test(passport)) {
+            showError("Invalid passport format! Must be one uppercase letter followed by 8 digits (e.g., A12345678)");
+            document.getElementById("passport").focus();
+            return;
+        }
+
+        // ✅ VALIDATION: Email
+        const emailRegex = /^[A-Za-z0-9+_.-]+@(.+)$/;
+        if (!emailRegex.test(email)) {
+            showError("Invalid email format! Please enter a valid email address");
+            document.getElementById("email").focus();
+            return;
+        }
+
+        // ✅ VALIDATION: Phone (must be XXX-XXXXXXX format)
+        const phoneRegex = /^\d{3}-\d{7,8}$/;
+        if (!phoneRegex.test(phone)) {
+            showError("Invalid phone format! Must be XXX-XXXXXXX (e.g., 012-3456789)");
+            document.getElementById("phone").focus();
+            return;
+        }
+
+        // All validations passed - proceed with booking
+        const bookingData = {
+            customerId: CUSTOMER_ID,
+            flightId: FLIGHT_ID,
+            seatId: seatId,
+            seatNumber: document.getElementById("selectedSeatNumber").value,
+            seatClass: document.getElementById("selectedSeatClass").value,
+            amount: document.getElementById("selectedAmount").value,
+            passenger: {
+                fullName: fullName,
+                passportNo: passport,
+                email: email,
+                phoneNumber: phone
+            }
+        };
+        
+        localStorage.setItem("tempBookingData", JSON.stringify(bookingData));
+        window.location.href = "/payment";
+    }
+
+    // ✅ Helper function to show error messages
+    function showError(message) {
+        // Remove existing error if any
+        const existingError = document.getElementById('validationError');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error alert
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'validationError';
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.role = 'alert';
+        errorDiv.innerHTML = `
+            <strong>❌ Validation Error:</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insert before form
+        const form = document.getElementById('bookingForm');
+        form.parentNode.insertBefore(errorDiv, form);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+
+    function formatTime(time) {
+        const hours = Math.floor(time / 100);
+        const minutes = time % 100;
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+    }
+
+    // ✅ Real-time validation functions
+    function validateFullName() {
+        const input = document.getElementById('fullName');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('fullNameError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        if (value.length < 2) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Name must be at least 2 characters';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validatePassport() {
+        const input = document.getElementById('passport');
+        const value = input.value.trim().toUpperCase();
+        const errorDiv = document.getElementById('passportError');
+        
+        input.value = value; // Auto-uppercase
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const passportRegex = /^[A-Z]\d{8}$/;
+        if (!passportRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Invalid format! Must be one letter + 8 digits (e.g., A12345678)';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validateEmail() {
+        const input = document.getElementById('email');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('emailError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const emailRegex = /^[A-Za-z0-9+_.-]+@(.+\..+)$/;
+        if (!emailRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Please enter a valid email address';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+
+    function validatePhone() {
+        const input = document.getElementById('phone');
+        const value = input.value.trim();
+        const errorDiv = document.getElementById('phoneError');
+        
+        if (value.length === 0) {
+            input.classList.remove('is-valid', 'is-invalid');
+            errorDiv.textContent = '';
+            return false;
+        }
+        
+        const phoneRegex = /^\d{3}-\d{7,8}$/;
+        if (!phoneRegex.test(value)) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            errorDiv.textContent = 'Invalid format! Must be XXX-XXXXXXX (e.g., 012-3456789)';
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        errorDiv.textContent = '';
+        return true;
+    }
+</script>
+</body>
+</html>

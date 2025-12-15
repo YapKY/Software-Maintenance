@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Flight Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            background: #f5f6fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .top-navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .main-layout {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            padding: 15px 25px;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            text-decoration: none;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: #f8f9fa;
+            border-left-color: #667eea;
+            color: #667eea;
+        }
+
+        .sidebar-item.active {
+            background: #e3f2fd;
+            border-left-color: #667eea;
+            color: #667eea;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .data-table-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.8rem;
+            font-weight: 600;
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .flight-route {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .route-arrow {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .stats-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stats-banner h3 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .stats-banner p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .form-text {
+            color: #6c757d !important;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .invalid-feedback {
+            display: none;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-control.is-invalid ~ .invalid-feedback,
+        .form-select.is-invalid ~ .invalid-feedback {
+            display: block;
+        }
+
+        .form-control.is-invalid ~ .form-text,
+        .form-select.is-invalid ~ .form-text {
+            display: none;
+        }
+
+        .form-control.is-valid,
+        .form-select.is-valid {
+            border-color: #198754;
+            padding-right: calc(1.5em + 0.75rem);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: #dc3545;
+            padding-right: calc(1.5em + 0.75rem);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        .time-select-group {
+            display: flex;
+            gap: 8px;
+            align-items: start;
+        }
+
+        .time-select-group select {
+            flex: 1;
+        }
+
+        .time-separator {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            padding-top: 8px;
+        }
+        
+        /* Style for inactive rows */
+        .table tr.inactive-row td {
+            color: #999;
+            background-color: #f8f9fa;
+        }
+        .table tr.inactive-row td strong {
+            color: #7f8c8d !important;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-navbar">
+    <div class="logo-section">
+        <div class="logo">✈️</div>
+        <div class="logo-text">
+            <h2 style="margin: 0; font-size: 20px; color: #2c3e50;">Airline Management System</h2>
+            <p style="margin: 0; font-size: 12px; color: #7f8c8d;">Staff Dashboard</p>
+        </div>
+    </div>
+    
+    <div class="user-section" style="display: flex; align-items: center; gap: 20px;">
+        <div style="text-align: right;">
+            <h3 style="margin: 0; font-size: 14px;" th:text="${staff.name}">Staff Name</h3>
+            <span class="badge bg-primary" th:text="${staff.position}">Position</span>
+        </div>
+        <a href="/staff/logout" class="btn btn-danger btn-sm">🚪 Logout</a>
+    </div>
+</nav>
+
+<div class="main-layout">
+    <div class="sidebar">
+        <a href="/staff/dashboard" class="sidebar-item active">
+            📋 Manage Flights
+        </a>
+        <a href="/staff/reports" 
+           class="sidebar-item" 
+           th:if="${staff.position == 'Manager'}">
+            📊 Sales Report
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div id="successAlert" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+            <strong>✓ Success!</strong> <span id="successMessage"></span>
+            <button type="button" class="btn-close" onclick="closeAlert('successAlert')"></button>
+        </div>
+
+        <div id="errorAlert" class="alert alert-danger alert-dismissible fade" role="alert" style="display: none;">
+            <strong>⚠️ Error!</strong> <span id="errorMessage"></span>
+            <button type="button" class="btn-close" onclick="closeAlert('errorAlert')"></button>
+        </div>
+
+        <div class="stats-banner" id="statsBanner" style="display: none;">
+            <div>
+                <h3 id="statTotalFlights">0</h3>
+                <p>Total Active Flights</p>
+            </div>
+            <div style="font-size: 48px; opacity: 0.3;">
+                ✈️
+            </div>
+        </div>
+
+        <div class="content-header">
+            <h1 style="color: #2c3e50; font-size: 28px; margin: 0;">✈️ Flight Management</h1>
+            <button class="btn btn-primary-gradient" onclick="openAddModal()">
+                ➕ Add New Flight
+            </button>
+        </div>
+
+        <div class="data-table-card">
+            <div id="loadingFlights" class="text-center p-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Loading flights...</p>
+            </div>
+
+            <div id="flightsTableContainer" style="display: none;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Flight ID</th>
+                                <th>Route</th>
+                                <th>Departure</th>
+                                <th>Arrival</th>
+                                <th>Price (Eco/Biz)</th>
+                                <th>Seats</th>
+                                <th>Status</th> <th style="min-width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="flightsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>No Flights Found</h3>
+                <p>Click "Add New Flight" to create your first flight</p>
+                <button class="btn btn-primary-gradient mt-3" onclick="openAddModal()">
+                    ➕ Add First Flight
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="flightModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add New Flight</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="flightForm" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" id="documentId">
+                    <input type="hidden" id="isEdit" value="false">
+
+                    <h6 class="mb-3">Flight & Plane Information</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Flight ID *</label>
+                            <input type="text" class="form-control" id="flightId" 
+                                   placeholder="e.g., F011" required>
+                            <small class="form-text">Format: F001, F002, etc.</small>
+                            <div class="invalid-feedback">Flight ID must be in format F001, F002, etc.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Plane Number *</label>
+                            <input type="text" class="form-control" id="planeNo" 
+                                   placeholder="e.g., PL04" required>
+                            <small class="form-text">Format: PL01, PL02, etc.</small>
+                            <div class="invalid-feedback">Plane number must be in format PL01, PL02, etc.</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Route Information</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Departure Country *</label>
+                            <select class="form-select" id="departureCountry" required>
+                                <option value="">Select Country</option>
+                                <option value="Malaysia">Malaysia</option>
+                                <option value="Japan">Japan</option>
+                                <option value="England">England</option>
+                                <option value="China">China</option>
+                                <option value="Australia">Australia</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a departure country</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Arrival Country *</label>
+                            <select class="form-select" id="arrivalCountry" required>
+                                <option value="">Select Country</option>
+                                <option value="Malaysia">Malaysia</option>
+                                <option value="Japan">Japan</option>
+                                <option value="England">England</option>
+                                <option value="China">China</option>
+                                <option value="Australia">Australia</option>
+                            </select>
+                            <div class="invalid-feedback">Arrival country must be different from departure</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Date Information</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Departure Date *</label>
+                            <input type="text" class="form-control" id="departureDate" 
+                                   placeholder="Click to select date" required readonly>
+                            <small class="form-text">Click the calendar icon to select</small>
+                            <div class="invalid-feedback">Please select a departure date</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Arrival Date *</label>
+                            <input type="text" class="form-control" id="arrivalDate" 
+                                   placeholder="Click to select date" required readonly>
+                            <small class="form-text">Must be same or after departure date</small>
+                            <div class="invalid-feedback">Arrival date cannot be before departure date</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Time Information (24-Hour Format)</h6>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Boarding Time *</label>
+                            <div class="time-select-group">
+                                <select class="form-select" id="boardingHour" required>
+                                    <option value="">HH</option>
+                                    <option value="0">00</option> <option value="1">01</option> <option value="2">02</option>
+                                    <option value="3">03</option> <option value="4">04</option> <option value="5">05</option>
+                                    <option value="6">06</option> <option value="7">07</option> <option value="8">08</option>
+                                    <option value="9">09</option> <option value="10">10</option> <option value="11">11</option>
+                                    <option value="12">12</option> <option value="13">13</option> <option value="14">14</option>
+                                    <option value="15">15</option> <option value="16">16</option> <option value="17">17</option>
+                                    <option value="18">18</option> <option value="19">19</option> <option value="20">20</option>
+                                    <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select class="form-select" id="boardingMinute" required>
+                                    <option value="">MM</option>
+                                    <option value="0">00</option> <option value="5">05</option> <option value="10">10</option>
+                                    <option value="15">15</option> <option value="20">20</option> <option value="25">25</option>
+                                    <option value="30">30</option> <option value="35">35</option> <option value="40">40</option>
+                                    <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>
+                                </select>
+                            </div>
+                            <small class="form-text">e.g., 13:00</small>
+                            <div class="invalid-feedback">Please select boarding time</div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Departure Time *</label>
+                            <div class="time-select-group">
+                                <select class="form-select" id="departureHour" required>
+                                    <option value="">HH</option>
+                                    <option value="0">00</option> <option value="1">01</option> <option value="2">02</option>
+                                    <option value="3">03</option> <option value="4">04</option> <option value="5">05</option>
+                                    <option value="6">06</option> <option value="7">07</option> <option value="8">08</option>
+                                    <option value="9">09</option> <option value="10">10</option> <option value="11">11</option>
+                                    <option value="12">12</option> <option value="13">13</option> <option value="14">14</option>
+                                    <option value="15">15</option> <option value="16">16</option> <option value="17">17</option>
+                                    <option value="18">18</option> <option value="19">19</option> <option value="20">20</option>
+                                    <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select class="form-select" id="departureMinute" required>
+                                    <option value="">MM</option>
+                                    <option value="0">00</option> <option value="5">05</option> <option value="10">10</option>
+                                    <option value="15">15</option> <option value="20">20</option> <option value="25">25</option>
+                                    <option value="30">30</option> <option value="35">35</option> <option value="40">40</option>
+                                    <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>
+                                </select>
+                            </div>
+                            <small class="form-text">e.g., 14:30</small>
+                            <div class="invalid-feedback">Must be after boarding time</div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Arrival Time *</label>
+                            <div class="time-select-group">
+                                <select class="form-select" id="arrivalHour" required>
+                                    <option value="">HH</option>
+                                    <option value="0">00</option> <option value="1">01</option> <option value="2">02</option>
+                                    <option value="3">03</option> <option value="4">04</option> <option value="5">05</option>
+                                    <option value="6">06</option> <option value="7">07</option> <option value="8">08</option>
+                                    <option value="9">09</option> <option value="10">10</option> <option value="11">11</option>
+                                    <option value="12">12</option> <option value="13">13</option> <option value="14">14</option>
+                                    <option value="15">15</option> <option value="16">16</option> <option value="17">17</option>
+                                    <option value="18">18</option> <option value="19">19</option> <option value="20">20</option>
+                                    <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select class="form-select" id="arrivalMinute" required>
+                                    <option value="">MM</option>
+                                    <option value="0">00</option> <option value="5">05</option> <option value="10">10</option>
+                                    <option value="15">15</option> <option value="20">20</option> <option value="25">25</option>
+                                    <option value="30">30</option> <option value="35">35</option> <option value="40">40</option>
+                                    <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>
+                                </select>
+                            </div>
+                            <small class="form-text">e.g., 20:00</small>
+                            <div class="invalid-feedback">Please select arrival time</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Pricing & Capacity</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Economy Price (RM) *</label>
+                            <input type="number" class="form-control" id="economyPrice" 
+                                   placeholder="e.g., 200.00" required step="0.01" min="0.01">
+                            <small class="form-text">Must be greater than 0</small>
+                            <div class="invalid-feedback">Price must be greater than 0</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Business Price (RM) *</label>
+                            <input type="number" class="form-control" id="businessPrice" 
+                                   placeholder="e.g., 400.00" required step="0.01" min="0.01">
+                            <small class="form-text">Must be higher than economy</small>
+                            <div class="invalid-feedback">Business price must be higher than economy</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Total Seats *</label>
+                            <input type="number" class="form-control" id="totalSeats" 
+                                   placeholder="e.g., 32" required min="4" step="4">
+                            <small class="form-text">Must be multiple of 4</small>
+                            <div class="invalid-feedback">Total seats must be a multiple of 4</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-gradient">💾 Save Flight</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3">Processing...</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const staffPosition = /*[[${staff.position}]]*/ 'Controller';
+    /*]]>*/
+
+    let departureDatePicker, arrivalDatePicker;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFlights();
+        initializeDatePickers();
+        setupValidation();
+    });
+
+    // ==================== DATE PICKERS ====================
+    function initializeDatePickers() {
+        departureDatePicker = flatpickr("#departureDate", {
+            dateFormat: "d/m/Y",
+            minDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (arrivalDatePicker) {
+                    arrivalDatePicker.set('minDate', dateStr);
+                }
+                document.getElementById('departureDate').classList.remove('is-invalid');
+                document.getElementById('departureDate').classList.add('is-valid');
+            }
+        });
+
+        arrivalDatePicker = flatpickr("#arrivalDate", {
+            dateFormat: "d/m/Y",
+            minDate: "today",
+            onChange: function() {
+                document.getElementById('arrivalDate').classList.remove('is-invalid');
+                document.getElementById('arrivalDate').classList.add('is-valid');
+            }
+        });
+    }
+
+    // ==================== VALIDATION ====================
+    function setupValidation() {
+        document.getElementById('flightId').addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && /^F\d{3,4}$/.test(value)) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else if (value) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+
+        document.getElementById('planeNo').addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && /^PL\d{2,3}$/.test(value)) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else if (value) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+
+        document.getElementById('departureCountry').addEventListener('change', validateCountries);
+        document.getElementById('arrivalCountry').addEventListener('change', validateCountries);
+
+        document.getElementById('economyPrice').addEventListener('input', validatePrices);
+        document.getElementById('businessPrice').addEventListener('input', validatePrices);
+
+        document.getElementById('totalSeats').addEventListener('blur', function() {
+            const value = parseInt(this.value);
+            if (value > 0 && value % 4 === 0) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else if (this.value) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+
+        ['boarding', 'departure', 'arrival'].forEach(timeType => {
+            document.getElementById(timeType + 'Hour').addEventListener('change', () => validateTimeSelects(timeType));
+            document.getElementById(timeType + 'Minute').addEventListener('change', () => validateTimeSelects(timeType));
+        });
+    }
+
+    function validateCountries() {
+        const dep = document.getElementById('departureCountry');
+        const arr = document.getElementById('arrivalCountry');
+        
+        if (dep.value && arr.value) {
+            if (dep.value === arr.value) {
+                dep.classList.add('is-invalid');
+                arr.classList.add('is-invalid');
+            } else {
+                dep.classList.remove('is-invalid');
+                arr.classList.remove('is-invalid');
+                dep.classList.add('is-valid');
+                arr.classList.add('is-valid');
+            }
+        }
+    }
+
+    function validatePrices() {
+        const eco = document.getElementById('economyPrice');
+        const bus = document.getElementById('businessPrice');
+        const ecoVal = parseFloat(eco.value);
+        const busVal = parseFloat(bus.value);
+        
+        if (eco.value && ecoVal > 0) {
+            eco.classList.remove('is-invalid');
+            eco.classList.add('is-valid');
+        }
+        
+        if (bus.value && busVal > 0 && ecoVal > 0 && busVal > ecoVal) {
+            bus.classList.remove('is-invalid');
+            bus.classList.add('is-valid');
+        } else if (bus.value) {
+            bus.classList.add('is-invalid');
+            bus.classList.remove('is-valid');
+        }
+    }
+
+    function validateTimeSelects(timeType) {
+        const hour = document.getElementById(timeType + 'Hour');
+        const minute = document.getElementById(timeType + 'Minute');
+        
+        if (hour.value && minute.value) {
+            hour.classList.remove('is-invalid');
+            hour.classList.add('is-valid');
+            minute.classList.remove('is-invalid');
+            minute.classList.add('is-valid');
+        }
+    }
+
+    // ==================== LOAD FLIGHTS ====================
+    async function loadFlights() {
+        document.getElementById('loadingFlights').style.display = 'block';
+        document.getElementById('flightsTableContainer').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+
+        try {
+            const response = await fetch('/api/flights');
+            const data = await response.json();
+
+            if (data.success && data.flights.length > 0) {
+                displayFlights(data.flights);
+                // Only count ACTIVE flights for the banner
+                const activeCount = data.flights.filter(f => f.status !== 'DELETED').length;
+                document.getElementById('statTotalFlights').textContent = activeCount;
+                document.getElementById('statsBanner').style.display = 'flex';
+            } else {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('statTotalFlights').textContent = '0';
+                document.getElementById('statsBanner').style.display = 'flex';
+            }
+        } catch (error) {
+            showError('Failed to load flights: ' + error.message);
+        } finally {
+            document.getElementById('loadingFlights').style.display = 'none';
+        }
+    }
+
+    // ==================== DISPLAY FLIGHTS ====================
+    function displayFlights(flights) {
+        const tbody = document.getElementById('flightsTableBody');
+        tbody.innerHTML = '';
+
+        flights.forEach(flight => {
+            const row = document.createElement('tr');
+            
+            // Check status (Handling backend status conventions)
+            const isInactive = flight.status === 'DELETED' || flight.status === 'INACTIVE';
+            
+            // Styling based on status
+            let statusBadge = '<span class="badge bg-success">Active</span>';
+            if (isInactive) {
+                statusBadge = '<span class="badge bg-danger">Inactive</span>';
+                row.classList.add('inactive-row'); // Add CSS class for dimming
+            }
+
+            // Determine Action Button (Delete vs Activate)
+            let actionButton = '';
+            if (staffPosition === 'Manager') {
+                if (isInactive) {
+                    // Show ACTIVATE button for deleted flights
+                    actionButton = `
+                        <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" onclick="activateFlight('${flight.documentId}', '${flight.flightId}')">
+                            <span>🔄</span> Activate
+                        </button>
+                    `;
+                } else {
+                    // Show DELETE button for active flights
+                    actionButton = `
+                        <button class="btn btn-danger btn-sm d-flex align-items-center gap-1" onclick="deactivateFlight('${flight.documentId}', '${flight.flightId}')">
+                             Inactivate 
+                        </button>
+                    `;
+                }
+            }
+
+            row.innerHTML = `
+                <td><strong style="color: #667eea;">${flight.flightId}</strong></td>
+                <td>
+                    <div class="flight-route">
+                        <span>${flight.departureCountry}</span>
+                        <span class="route-arrow">→</span>
+                        <span>${flight.arrivalCountry}</span>
+                    </div>
+                </td>
+                <td>
+                    <div>${flight.departureDate}</div>
+                    <small class="text-muted">${formatTime24(flight.departureTime)}</small>
+                </td>
+                <td>
+                    <div>${flight.arrivalDate}</div>
+                    <small class="text-muted">${formatTime24(flight.arrivalTime)}</small>
+                </td>
+                <td>
+                    <div>RM ${flight.economyPrice.toFixed(2)}</div>
+                    <small class="text-muted">RM ${flight.businessPrice.toFixed(2)}</small>
+                </td>
+                <td><span class="badge bg-secondary">${flight.totalSeats}</span></td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm d-flex align-items-center gap-1" onclick="editFlight('${flight.documentId}')">
+                            <span>✏️</span> Edit
+                        </button>
+                        ${actionButton}
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        document.getElementById('flightsTableContainer').style.display = 'block';
+    }
+
+    // ==================== ADD FLIGHT ====================
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Flight';
+        document.getElementById('flightForm').reset();
+        document.getElementById('documentId').value = '';
+        document.getElementById('isEdit').value = 'false';
+        document.getElementById('flightId').readOnly = false;
+        
+        if (departureDatePicker) departureDatePicker.clear();
+        if (arrivalDatePicker) arrivalDatePicker.clear();
+        
+        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+            el.classList.remove('is-valid', 'is-invalid');
+        });
+
+        const modal = new bootstrap.Modal(document.getElementById('flightModal'));
+        modal.show();
+    }
+
+    // ==================== EDIT FLIGHT ====================
+    async function editFlight(documentId) {
+        showLoading();
+
+        try {
+            const response = await fetch(`/api/flights/${documentId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const flight = data.flight;
+                
+                document.getElementById('modalTitle').textContent = 'Edit Flight';
+                document.getElementById('documentId').value = documentId;
+                document.getElementById('isEdit').value = 'true';
+                document.getElementById('flightId').value = flight.flightId;
+                document.getElementById('flightId').readOnly = true;
+                document.getElementById('departureCountry').value = flight.departureCountry;
+                document.getElementById('arrivalCountry').value = flight.arrivalCountry;
+                
+                if (departureDatePicker) departureDatePicker.setDate(flight.departureDate, true, "d/m/Y");
+                if (arrivalDatePicker) arrivalDatePicker.setDate(flight.arrivalDate, true, "d/m/Y");
+                
+                setDropdownTime('boarding', flight.boardingTime);
+                setDropdownTime('departure', flight.departureTime);
+                setDropdownTime('arrival', flight.arrivalTime);
+                
+                document.getElementById('economyPrice').value = flight.economyPrice;
+                document.getElementById('businessPrice').value = flight.businessPrice;
+                document.getElementById('planeNo').value = flight.planeNo;
+                document.getElementById('totalSeats').value = flight.totalSeats;
+
+                const modal = new bootstrap.Modal(document.getElementById('flightModal'));
+                modal.show();
+            } else {
+                showError('Failed to load flight details');
+            }
+        } catch (error) {
+            showError('Error: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function setDropdownTime(prefix, timeInt) {
+        const hour = Math.floor(timeInt / 100);
+        const minute = timeInt % 100;
+        document.getElementById(prefix + 'Hour').value = hour;
+        document.getElementById(prefix + 'Minute').value = minute;
+    }
+
+    // ==================== SAVE FLIGHT ====================
+    document.getElementById('flightForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Helper to get 24h integer
+        const get24hTime = (prefix) => {
+            const h = parseInt(document.getElementById(prefix + 'Hour').value);
+            const m = parseInt(document.getElementById(prefix + 'Minute').value);
+            return (h * 100) + m;
+        };
+
+        const boardingTime = get24hTime('boarding');
+        const departureTime = get24hTime('departure');
+        const arrivalTime = get24hTime('arrival');
+
+        const isEdit = document.getElementById('isEdit').value === 'true';
+        const documentId = document.getElementById('documentId').value;
+
+        const flightData = {
+            flightId: document.getElementById('flightId').value.trim(),
+            departureCountry: document.getElementById('departureCountry').value,
+            arrivalCountry: document.getElementById('arrivalCountry').value,
+            departureDate: document.getElementById('departureDate').value,
+            arrivalDate: document.getElementById('arrivalDate').value,
+            departureTime: departureTime,
+            arrivalTime: arrivalTime,
+            boardingTime: boardingTime,
+            economyPrice: parseFloat(document.getElementById('economyPrice').value),
+            businessPrice: parseFloat(document.getElementById('businessPrice').value),
+            planeNo: document.getElementById('planeNo').value.trim(),
+            totalSeats: parseInt(document.getElementById('totalSeats').value),
+            status: "ACTIVE"
+        };
+
+        showLoading();
+
+        try {
+            const url = isEdit ? `/api/flights/${documentId}` : '/api/flights';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(flightData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('flightModal')).hide();
+                loadFlights();
+            } else {
+                showError(data.message);
+            }
+        } catch (error) {
+            showError('Connection error: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // ==================== DEACTIVATE FLIGHT (DELETE) ====================
+    async function deactivateFlight(documentId, flightId) {
+        if (!confirm(`Are you sure you want to deactivate flight ${flightId}?\n\nData will be preserved as INACTIVE.`)) {
+            return;
+        }
+
+        showLoading();
+
+        try {
+            const response = await fetch(`/api/flights/${documentId}`, { method: 'DELETE' });
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Flight ' + flightId + ' deactivated successfully');
+                loadFlights();
+            } else {
+                showError(data.message);
+            }
+        } catch (error) {
+            showError('Connection error: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // ==================== ACTIVATE FLIGHT (RESTORE) ====================
+    async function activateFlight(documentId, flightId) {
+        if (!confirm(`Are you sure you want to RE-ACTIVATE flight ${flightId}?`)) {
+            return;
+        }
+
+        showLoading();
+
+        try {
+            // Assumes backend endpoint: PUT /api/flights/{id}/activate
+            const response = await fetch(`/api/flights/${documentId}/activate`, { method: 'PUT' });
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Flight ' + flightId + ' is now ACTIVE');
+                loadFlights();
+            } else {
+                showError(data.message);
+            }
+        } catch (error) {
+            showError('Connection error: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // ==================== HELPER FUNCTIONS ====================
+    function formatTime24(timeInt) {
+        const hour = Math.floor(timeInt / 100);
+        const minute = timeInt % 100;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        const alert = document.getElementById('successAlert');
+        document.getElementById('successMessage').textContent = message;
+        alert.style.display = 'block';
+        alert.classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => closeAlert('successAlert'), 5000);
+    }
+
+    function showError(message) {
+        const alert = document.getElementById('errorAlert');
+        document.getElementById('errorMessage').textContent = message;
+        alert.style.display = 'block';
+        alert.classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => closeAlert('errorAlert'), 5000);
+    }
+
+    function closeAlert(alertId) {
+        const alert = document.getElementById(alertId);
+        alert.classList.remove('show');
+        setTimeout(() => alert.style.display = 'none', 150);
+    }
+</script>
+
+</body>
+</html>
