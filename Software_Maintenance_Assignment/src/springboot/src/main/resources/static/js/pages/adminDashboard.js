@@ -163,9 +163,6 @@ const AdminDashboard = {
     window.location.href = "/customer-list";
   },
 
-  viewReports: function () {
-    window.location.href = "/staff/reports";
-  },
 
   manageBookings: function () {
     // Navigate to the staff dashboard
