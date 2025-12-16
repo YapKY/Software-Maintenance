@@ -68,7 +68,8 @@ class UserManagementServiceTest {
 
     /**
      * Helper to mock security context.
-     * Uses lenient() to prevent UnnecessaryStubbingException if a test doesn't use a specific call.
+     * Uses lenient() to prevent UnnecessaryStubbingException if a test doesn't use
+     * a specific call.
      */
     private void mockSecurityContext(String userId, String role) {
         lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -259,7 +260,7 @@ class UserManagementServiceTest {
     @Test
     void testGetUserProfileById_Unauthorized() {
         mockSecurityContext("user1", "ROLE_USER"); // User trying to access
-        
+
         assertThrows(UnauthorizedException.class, () -> userManagementService.getUserProfileById("someId"));
     }
 
@@ -301,9 +302,8 @@ class UserManagementServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.existsByPhoneNumber("222")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> 
-            userManagementService.updateUserProfile(userId, "Name", "222")
-        );
+        assertThrows(IllegalArgumentException.class,
+                () -> userManagementService.updateUserProfile(userId, "Name", "222"));
     }
 
     @Test
@@ -320,12 +320,15 @@ class UserManagementServiceTest {
 
     @Test
     void testDeleteUserAccount_Unauthorized() {
-        // This was likely causing the error because it checks the ID before checking the role (authorities)
+        // This was likely causing the error because it checks the ID before checking
+        // the role (authorities)
         // so getAuthorities was never called, but we stubbed it.
         mockSecurityContext("user1", "ROLE_USER");
-        
-        assertThrows(UnauthorizedException.class, () -> 
-            userManagementService.deleteUserAccount("user2") // Trying to delete different user
+
+        assertThrows(UnauthorizedException.class, () -> userManagementService.deleteUserAccount("user2") // Trying to
+                                                                                                         // delete
+                                                                                                         // different
+                                                                                                         // user
         );
     }
 }
