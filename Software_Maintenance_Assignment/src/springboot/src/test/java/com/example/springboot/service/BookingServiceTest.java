@@ -21,7 +21,6 @@ import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -165,6 +164,20 @@ class BookingServiceTest {
         assertThrows(RuntimeException.class, () -> 
             bookingService.calculateSeatPrice(testSeat, testFlight)
         );
+    }
+
+    @Test
+    @DisplayName("Should calculate price for null seat type")
+    void testCalculateSeatPrice_NullSeatType() throws Exception {
+        // Arrange
+        testSeat.setTypeOfSeat(null);
+        when(pricingContext.calculatePrice(null, testFlight)).thenReturn(0.0);
+
+        // Act
+        double price = bookingService.calculateSeatPrice(testSeat, testFlight);
+
+        // Assert
+        assertEquals(0.0, price);
     }
 
     // ==================== GET SEATS BY FLIGHT ID TESTS ====================
@@ -329,6 +342,36 @@ class BookingServiceTest {
         assertNotNull(result);
     }
 
+    @Test
+    @DisplayName("Should save payment with correct amount")
+    void testProcessBooking_PaymentAmount() throws Exception {
+        // Arrange
+        setupSuccessfulBooking();
+
+        // Act
+        bookingService.processBooking(testBookingRequest);
+
+        // Assert
+        verify(repository).save(eq("payments"), argThat(payment -> {
+            Payment p = (Payment) payment;
+            return p.getAmount() == 200.00;
+        }));
+    }
+
+    @Test
+    @DisplayName("Should set passenger document ID after saving")
+    void testProcessBooking_PassengerIdSet() throws Exception {
+        // Arrange
+        setupSuccessfulBooking();
+
+        // Act
+        bookingService.processBooking(testBookingRequest);
+
+        // Assert
+        verify(repository).save(eq("passengers"), any(Passenger.class));
+        verify(passengerFactory).createPassenger("John Doe", "A12345678", "john@example.com", "012-3456789");
+    }
+
     // ==================== GET TICKET DETAILS TESTS ====================
 
     @Test
@@ -416,10 +459,62 @@ class BookingServiceTest {
         assertNull(result.getFlightDetails());
     }
 
+    @Test
+    @DisplayName("Should handle empty flight ID")
+    void testGetTicketDetails_EmptyFlightId() throws Exception {
+        // Arrange
+        testSeat.setFlightId("");
+        when(repository.findById("tickets", "ticket-doc-1", Ticket.class)).thenReturn(testTicket);
+        when(repository.findById("passengers", "passenger-doc-1", Passenger.class)).thenReturn(testPassenger);
+        when(repository.findById("seats", "seat-doc-1", Seat.class)).thenReturn(testSeat);
+
+        // Act
+        Ticket result = bookingService.getTicketDetails("ticket-doc-1");
+
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getFlightDetails());
+    }
+
+    @Test
+    @DisplayName("Should handle exception when loading passenger")
+    void testGetTicketDetails_PassengerException() throws Exception {
+        // Arrange
+        when(repository.findById("tickets", "ticket-doc-1", Ticket.class)).thenReturn(testTicket);
+        when(repository.findById("passengers", "passenger-doc-1", Passenger.class))
+            .thenThrow(new RuntimeException("Database error"));
+        when(repository.findById("seats", "seat-doc-1", Seat.class)).thenReturn(testSeat);
+        setupFlightQuery();
+
+        // Act
+        Ticket result = bookingService.getTicketDetails("ticket-doc-1");
+
+        // Assert - Should not throw
+        assertNotNull(result);
+        assertNull(result.getPassengerDetails());
+    }
+
+    @Test
+    @DisplayName("Should handle exception when loading seat")
+    void testGetTicketDetails_SeatException() throws Exception {
+        // Arrange
+        when(repository.findById("tickets", "ticket-doc-1", Ticket.class)).thenReturn(testTicket);
+        when(repository.findById("passengers", "passenger-doc-1", Passenger.class)).thenReturn(testPassenger);
+        when(repository.findById("seats", "seat-doc-1", Seat.class))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // Act
+        Ticket result = bookingService.getTicketDetails("ticket-doc-1");
+
+        // Assert - Should not throw
+        assertNotNull(result);
+        assertNotNull(result.getPassengerDetails());
+    }
+
     // ==================== GET CUSTOMER TICKETS TESTS ====================
 
     // @Test
-    // @DisplayName("Should get all customer tickets")
+    // @DisplayName("Should get all customer tickets with enrichment")
     // void testGetCustomerTickets_Success() throws Exception {
     //     // Arrange
     //     List<QueryDocumentSnapshot> ticketDocs = createMockTicketDocuments(3);
@@ -433,6 +528,9 @@ class BookingServiceTest {
 
     //     // Assert
     //     assertEquals(3, tickets.size());
+    //     for (Ticket ticket : tickets) {
+    //         assertNotNull(ticket.getDocumentId());
+    //     }
     // }
 
     @Test
@@ -446,6 +544,70 @@ class BookingServiceTest {
 
         // Assert
         assertTrue(tickets.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should handle enrichment errors gracefully")
+    void testGetCustomerTickets_EnrichmentError() throws Exception {
+        // Arrange
+        List<QueryDocumentSnapshot> ticketDocs = createMockTicketDocuments(1);
+        setupCustomerTicketsQuery(ticketDocs);
+        when(repository.findById(eq("passengers"), anyString(), eq(Passenger.class)))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // Act - Should not throw
+        List<Ticket> tickets = bookingService.getCustomerTickets("customer-1");
+
+        // Assert
+        assertEquals(1, tickets.size());
+    }
+
+    @Test
+    @DisplayName("Should handle seat without flight ID")
+    void testGetCustomerTickets_SeatWithoutFlight() throws Exception {
+        // Arrange
+        List<QueryDocumentSnapshot> ticketDocs = createMockTicketDocuments(1);
+        setupCustomerTicketsQuery(ticketDocs);
+        
+        Seat seatWithoutFlight = new Seat();
+        seatWithoutFlight.setDocumentId("seat-no-flight");
+        seatWithoutFlight.setSeatNumber(101);
+        seatWithoutFlight.setTypeOfSeat("Economy");
+        seatWithoutFlight.setFlightId(null);
+        
+        when(repository.findById(eq("passengers"), anyString(), eq(Passenger.class))).thenReturn(testPassenger);
+        when(repository.findById(eq("seats"), anyString(), eq(Seat.class))).thenReturn(seatWithoutFlight);
+
+        // Act
+        List<Ticket> tickets = bookingService.getCustomerTickets("customer-1");
+
+        // Assert
+        assertEquals(1, tickets.size());
+        assertNull(tickets.get(0).getFlightDetails());
+    }
+
+    @Test
+    @DisplayName("Should handle empty flight ID in seat")
+    void testGetCustomerTickets_EmptyFlightId() throws Exception {
+        // Arrange
+        List<QueryDocumentSnapshot> ticketDocs = createMockTicketDocuments(1);
+        setupCustomerTicketsQuery(ticketDocs);
+        
+        Seat seatEmptyFlight = new Seat();
+        seatEmptyFlight.setDocumentId("seat-empty-flight");
+        seatEmptyFlight.setSeatNumber(102);
+        seatEmptyFlight.setTypeOfSeat("Business");
+        seatEmptyFlight.setFlightId("");
+        
+        when(repository.findById(eq("passengers"), anyString(), eq(Passenger.class))).thenReturn(testPassenger);
+        when(repository.findById(eq("seats"), anyString(), eq(Seat.class))).thenReturn(seatEmptyFlight);
+
+        // Act
+        List<Ticket> tickets = bookingService.getCustomerTickets("customer-1");
+
+        // Assert
+        assertEquals(1, tickets.size());
+        assertNull(tickets.get(0).getFlightDetails());
     }
 
     // ==================== GET SEAT BY ID TESTS ====================
@@ -471,9 +633,12 @@ class BookingServiceTest {
         when(repository.findById("seats", "seat-doc-1", Seat.class)).thenReturn(null);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            bookingService.getSeatById("seat-doc-1")
+        RuntimeException exception = assertThrows(
+            RuntimeException.class,
+            () -> bookingService.getSeatById("seat-doc-1")
         );
+        
+        assertTrue(exception.getMessage().contains("Seat not found"));
     }
 
     // ==================== GET FLIGHT BY SEAT ID TESTS ====================
@@ -501,9 +666,28 @@ class BookingServiceTest {
         when(repository.findById("seats", "seat-doc-1", Seat.class)).thenReturn(testSeat);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            bookingService.getFlightBySeatId("seat-doc-1")
+        RuntimeException exception = assertThrows(
+            RuntimeException.class,
+            () -> bookingService.getFlightBySeatId("seat-doc-1")
         );
+        
+        assertTrue(exception.getMessage().contains("does not have an associated flight"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when seat has empty flight ID")
+    void testGetFlightBySeatId_EmptyFlightId() throws Exception {
+        // Arrange
+        testSeat.setFlightId("");
+        when(repository.findById("seats", "seat-doc-1", Seat.class)).thenReturn(testSeat);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(
+            RuntimeException.class,
+            () -> bookingService.getFlightBySeatId("seat-doc-1")
+        );
+        
+        assertTrue(exception.getMessage().contains("does not have an associated flight"));
     }
 
     @Test
@@ -517,9 +701,12 @@ class BookingServiceTest {
         when(querySnapshot.isEmpty()).thenReturn(true);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            bookingService.getFlightBySeatId("seat-doc-1")
+        RuntimeException exception = assertThrows(
+            RuntimeException.class,
+            () -> bookingService.getFlightBySeatId("seat-doc-1")
         );
+        
+        assertTrue(exception.getMessage().contains("Flight not found"));
     }
 
     // ==================== HELPER METHODS ====================
