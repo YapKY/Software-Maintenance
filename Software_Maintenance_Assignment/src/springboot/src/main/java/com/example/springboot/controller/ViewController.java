@@ -21,6 +21,11 @@ public class ViewController {
         return "index";
     }
 
+    @GetMapping("/pages/login.html")
+        public String login() {
+        return "pages/login";
+    }
+
     /**
      * Generic handler for pages in the 'pages' subfolder (e.g., login, dashboards)
      * Maps /pages/login.html -> templates/pages/login.html

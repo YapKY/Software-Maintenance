@@ -87,7 +87,11 @@ public class SecurityConfig {
                         response.setContentType("application/json");
                         response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
                     } else {
-                        response.sendRedirect("/pages/login.html");
+                        // OLD: Causes loop because it looks like a normal visit
+                        // response.sendRedirect("/pages/login.html");
+                        
+                        // NEW: Adds a flag so login.js knows to clear the token
+                        response.sendRedirect("/pages/login.html?error=unauthorized");
                     }
                 })
                 .accessDeniedHandler((request, response, ex) -> {

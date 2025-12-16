@@ -109,6 +109,10 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            // Log expired tokens as WARN or DEBUG to reduce log noise
+            log.warn("JWT token expired: {}", e.getMessage());
+            return false;
         } catch (JwtException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
             return false;
@@ -140,5 +144,15 @@ public class JwtTokenProvider {
             log.warn("Invalid role value '{}' in JWT token, defaulting to USER", roleStr);
             return Role.USER;
         }
+    }
+
+    public String getEmailFromToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("email", String.class);
     }
 }
