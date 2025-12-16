@@ -28,44 +28,40 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
-            // [FIXED] Removed STATELESS enforcement to allow Session usage in Controllers (e.g., StaffViewController)
-            // .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
+            // Enforce HTTPS
+            .requiresChannel(channel -> channel.anyRequest().requiresSecure())
             .headers(headers -> {
-                // 1. Disable Frame Options
                 headers.frameOptions(frame -> frame.disable());
-                
-                // 2. Set Referrer Policy
                 headers.referrerPolicy(referrer -> referrer
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 );
-                
-                // 3. Set Permissions Policy
                 headers.permissionsPolicy(permissions -> permissions
                     .policy("camera=(), microphone=(), geolocation=()")
                 );
-                
-                // 4. [CRITICAL] Add Custom Header for Google Sign-In Popup
                 headers.addHeaderWriter((request, response) -> {
                     response.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                 });
             })
             .authorizeHttpRequests(auth -> auth
+                // Public Static Resources
                 .requestMatchers(
                     "/", 
                     "/index.html", 
-                    "/pages/login.html", // Ensure login page is accessible
-                    "/pages/register.html",
-                    "/pages/forgot-password.html",
-                    "/pages/reset-password.html",
-                    "/pages/verify-email.html",
-                    "/pages/mfa-setup.html",
-                    "/pages/**", 
                     "/css/**", 
                     "/js/**", 
                     "/images/**", 
                     "/favicon.ico"
                 ).permitAll()
+                // Public Pages ONLY (Do not use /pages/** wildcard)
+                .requestMatchers(
+                    "/pages/login.html", 
+                    "/pages/register.html",
+                    "/pages/forgot-password.html",
+                    "/pages/reset-password.html",
+                    "/pages/verify-email.html",
+                    "/pages/mfa-setup.html"
+                ).permitAll()
+                // Public API Endpoints
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/register/**",
@@ -74,6 +70,7 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/v3/api-docs/**"
                 ).permitAll()
+                // Protected Endpoints
                 .requestMatchers("/api/dashboard/user/**").hasRole("USER")
                 .requestMatchers("/api/dashboard/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/users/**").hasAnyRole("ADMIN", "SUPERADMIN")
@@ -83,7 +80,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions
-                // [FIXED] Smart handling: Redirect browsers to login, return JSON to APIs
                 .authenticationEntryPoint((request, response, ex) -> {
                     String uri = request.getRequestURI();
                     if (uri.startsWith("/api/")) {
@@ -91,7 +87,6 @@ public class SecurityConfig {
                         response.setContentType("application/json");
                         response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
                     } else {
-                        // Redirect to login page for browser navigation
                         response.sendRedirect("/pages/login.html");
                     }
                 })

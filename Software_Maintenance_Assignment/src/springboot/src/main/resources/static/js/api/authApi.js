@@ -75,7 +75,7 @@ const AuthAPI = {
     /**
      * Confirm Password Reset
      */
-    resetPassword: async function(token, newPassword) {
+    resetPassword: async function(token, newPassword, confirmPassword) { 
         try {
             const response = await fetch(`${CONFIG.API_BASE_URL}/api/auth/reset-password`, {
                 method: 'POST',
@@ -84,7 +84,8 @@ const AuthAPI = {
                 },
                 body: JSON.stringify({
                     token: token,
-                    newPassword: newPassword
+                    newPassword: newPassword,
+                    confirmPassword: confirmPassword 
                 })
             });
             
