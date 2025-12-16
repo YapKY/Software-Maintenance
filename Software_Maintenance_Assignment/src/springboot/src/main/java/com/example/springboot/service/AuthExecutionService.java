@@ -5,6 +5,7 @@ import com.example.springboot.enums.Role;
 import com.example.springboot.dto.request.*;
 import com.example.springboot.dto.response.AuthResponseDTO;
 import com.example.springboot.dto.response.JWTResponseDTO;
+import com.example.springboot.model.RefreshToken;
 import com.example.springboot.exception.InvalidCredentialsException;
 import com.example.springboot.factory.AuthStrategyFactory;
 import com.example.springboot.security.jwt.JwtTokenProvider;
@@ -12,6 +13,7 @@ import com.example.springboot.strategy.authentication.AuthStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 /**
  * AuthExecutionService - Orchestrates authentication
@@ -24,10 +26,9 @@ public class AuthExecutionService {
     
     private final AuthStrategyFactory authStrategyFactory;
     private final TokenService tokenService;
-    private final JwtTokenProvider jwtTokenProvider; // [FIX] Added dependency
-    private final MFAService mfaService;             // [FIX] Added dependency
+    private final JwtTokenProvider jwtTokenProvider;
+    private final MFAService mfaService;
     
-    // ... authenticateWithEmail and authenticateWithSocial methods remain the same ...
     public AuthResponseDTO authenticateWithEmail(LoginRequestDTO request) {
         AuthStrategy strategy = authStrategyFactory.getAuthStrategy(AuthProvider.EMAIL);
         return strategy.authenticate(request, request.getRecaptchaToken());
@@ -39,8 +40,64 @@ public class AuthExecutionService {
     }
     
     /**
+     * Refresh Token Flow
+     * Validates old token, revokes it (rotation), and issues a new pair.
+     */
+    public AuthResponseDTO refreshToken(RefreshTokenRequestDTO request) {
+        try {
+            String requestToken = request.getRefreshToken();
+            
+            // 1. Validate format/signature
+            if (!jwtTokenProvider.validateToken(requestToken)) {
+                throw new InvalidCredentialsException("Invalid refresh token signature");
+            }
+            
+            // 2. Check DB for existence and revocation
+            RefreshToken storedToken = tokenService.findByToken(requestToken)
+                .orElseThrow(() -> new InvalidCredentialsException("Refresh token not found in database"));
+                
+            if (storedToken.getRevoked()) {
+                throw new InvalidCredentialsException("Refresh token has been revoked");
+            }
+
+            if (storedToken.isExpired()) {
+                 throw new InvalidCredentialsException("Refresh token has expired");
+            }
+            
+            // 3. Extract user info
+            String userId = jwtTokenProvider.getUserIdFromToken(requestToken);
+            Role role = jwtTokenProvider.getRoleFromToken(requestToken);
+            String email = jwtTokenProvider.getEmailFromToken(requestToken);
+            
+            // 4. Revoke old token (Rotation)
+            tokenService.revokeToken(requestToken);
+            
+            // 5. Generate new tokens
+            JWTResponseDTO tokens = jwtTokenProvider.generateTokens(userId, email, role);
+            
+            // 6. Save new refresh token
+            RefreshToken newRefreshToken = RefreshToken.builder()
+                .token(tokens.getRefreshToken())
+                .userId(userId)
+                .userRole(role)
+                .expiryDate(LocalDateTime.now().plusDays(7)) // Default 7 days matching standard config
+                .build();
+            tokenService.save(newRefreshToken);
+            
+            return AuthResponseDTO.builder()
+                .success(true)
+                .message("Token refreshed successfully")
+                .tokens(tokens)
+                .build();
+                
+        } catch (Exception e) {
+            log.error("Token refresh failed: {}", e.getMessage());
+            throw new InvalidCredentialsException("Failed to refresh token: " + e.getMessage());
+        }
+    }
+
+    /**
      * Verify MFA code and issue final tokens
-     * Used for both Email (optional flow) and Social Login (mandatory flow for 2FA)
      */
     public AuthResponseDTO verifyMFA(MFARequestDTO request) {
         try {
@@ -62,6 +119,15 @@ public class AuthExecutionService {
             
             // 4. Generate Final Access/Refresh Tokens
             JWTResponseDTO tokens = jwtTokenProvider.generateTokens(userId, request.getEmail(), role);
+
+             // 5. Save Refresh Token for Stateful Management
+            RefreshToken newRefreshToken = RefreshToken.builder()
+                .token(tokens.getRefreshToken())
+                .userId(userId)
+                .userRole(role)
+                .expiryDate(LocalDateTime.now().plusDays(7)) 
+                .build();
+            tokenService.save(newRefreshToken);
             
             log.info("MFA verification successful for user: {}", userId);
             

@@ -38,25 +38,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = extractJwtFromRequest(request);
             
-            if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
-                String userId = jwtTokenProvider.getUserIdFromToken(jwt);
-                Role role = jwtTokenProvider.getRoleFromToken(jwt);
-                
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(
-                        userId.toString(),
-                        null,
-                        Collections.singletonList(
-                            new SimpleGrantedAuthority("ROLE_" + role.name())
-                        )
+            if (jwt != null) {
+                if (jwtTokenProvider.validateToken(jwt)) {
+                    String userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                    Role role = jwtTokenProvider.getRoleFromToken(jwt);
+                    
+                    UsernamePasswordAuthenticationToken authentication = 
+                        new UsernamePasswordAuthenticationToken(
+                            userId.toString(),
+                            null,
+                            Collections.singletonList(
+                                new SimpleGrantedAuthority("ROLE_" + role.name())
+                            )
+                        );
+                    
+                    authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
                     );
-                
-                authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT authentication successful for user: {}", userId);
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("JWT authentication successful for user: {}", userId);
+                } else {
+                    // Token is invalid or expired: Clear the cookie to prevent infinite error loops
+                    log.debug("Invalid JWT detected. Clearing cookie.");
+                    Cookie cookie = new Cookie("jwt_token", null);
+                    cookie.setPath("/");
+                    cookie.setHttpOnly(true);
+                    cookie.setMaxAge(0); // Delete immediately
+                    response.addCookie(cookie);
+                }
             }
             
         } catch (Exception e) {

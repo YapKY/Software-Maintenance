@@ -11,9 +11,37 @@ const LoginPage = {
     isLocked: false,
     
     init: function() {
+        // 1. Check if we were redirected here due to an auth error
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAuthError = urlParams.has('error') || urlParams.has('logout');
+        
+        // 2. If there is an error (e.g. ?error=unauthorized from SecurityConfig), clear bad tokens
+        if (isAuthError) {
+            console.log('Authentication error detected, clearing session.');
+            Storage.clearAll();
+            // Optional: Remove the query param from URL without refreshing to look cleaner
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Show a friendly message if needed
+            const errorType = urlParams.get('error');
+            if (errorType === 'unauthorized' || errorType === 'session_expired') {
+                Helpers.showError('Your session has expired. Please login again.');
+            }
+        }
+
+        // 3. ONLY redirect if authenticated AND no error was just detected
         if (Storage.isAuthenticated()) {
-            Helpers.redirectByRole(Storage.getUserRole());
-            return;
+            // Double check referrer to prevent loops if SecurityConfig wasn't updated
+            const referrer = document.referrer || "";
+            if (referrer.includes('dashboard')) {
+                // We came from a dashboard but are back at login? Token is likely bad.
+                console.warn('Loop detected from dashboard. Clearing session.');
+                Storage.clearAll();
+            } else {
+                console.log('User is authenticated, redirecting to dashboard...');
+                Helpers.redirectByRole(Storage.getUserRole());
+                return;
+            }
         }
         
         this.checkLoginLockout();
