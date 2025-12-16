@@ -79,7 +79,8 @@ const ResetPasswordPage = {
         submitBtn.innerHTML = '<span>Resetting...</span>';
         
         try {
-            const response = await AuthAPI.resetPassword(this.token, newPassword);
+            // Pass confirmPassword as the 3rd argument
+            const response = await AuthAPI.resetPassword(this.token, newPassword, confirmPassword);
             
             if (response.success) {
                 Helpers.showSuccess('Password reset successful! Redirecting to login...');

@@ -81,6 +81,9 @@ public class AdminRegisterStrategy implements RegisterStrategy {
                 .requiresMfa(false)
                 .build();
                 
+        } catch (UnauthorizedException e) {
+            // [FIX] Explicitly re-throw UnauthorizedException so it isn't caught by the generic Exception block
+            throw e;
         } catch (ClassCastException e) {
             log.error("Invalid registration data type");
             throw new InvalidCredentialsException("Invalid registration format");

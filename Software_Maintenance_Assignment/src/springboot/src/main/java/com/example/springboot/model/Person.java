@@ -92,6 +92,11 @@ public abstract class Person {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(name, phoneNumber, gender, email);
+    }
+    
+    @Override
     public String toString() {
         return String.format(
                 "                Name : %s\n                Gender : %s\n                Email Address : %s\n                Phone Number : %s",
