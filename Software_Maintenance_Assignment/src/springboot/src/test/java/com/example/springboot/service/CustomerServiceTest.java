@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -391,5 +392,264 @@ class CustomerServiceTest {
         assertThrows(RuntimeException.class, () -> {
             customerService.registerCustomer(newCustomer);
         });
+    }
+
+    // ==================== ADDITIONAL COVERAGE TESTS ====================
+
+    @Test
+    @DisplayName("Should fail authentication with exceptions handled gracefully")
+    void testAuthenticateCustomer_ExceptionHandled() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findByCustIcNo("123456-12-1234"))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // Act
+        Optional<Customer> result = customerService.authenticateCustomer("123456-12-1234", "SecurePass123");
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    @DisplayName("Should fail authentication when IC number does not exist")
+    void testAuthenticateCustomer_IcNotFound() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findByCustIcNo("999999-99-9999"))
+                .thenReturn(Optional.empty());
+
+        // Act
+        Optional<Customer> result = customerService.authenticateCustomer("999999-99-9999", "AnyPassword");
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    @DisplayName("Should fail authentication with wrong password")
+    void testAuthenticateCustomer_WrongPassword() throws ExecutionException, InterruptedException {
+        // Arrange
+        testCustomer.setCustPassword("CorrectPassword");
+        when(customerRepository.findByCustIcNo("123456-12-1234"))
+                .thenReturn(Optional.of(testCustomer));
+
+        // Act
+        Optional<Customer> result = customerService.authenticateCustomer("123456-12-1234", "WrongPassword");
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    @DisplayName("Should get customer by IC with verification")
+    void testGetCustomerByIcNumber_WithVerification() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer anotherCustomer = new Customer();
+        anotherCustomer.setCustId("2");
+        anotherCustomer.setCustIcNo("987654-54-3210");
+        anotherCustomer.setName("Jane Doe");
+
+        when(customerRepository.findByCustIcNo("987654-54-3210"))
+                .thenReturn(Optional.of(anotherCustomer));
+
+        // Act
+        Optional<Customer> result = customerService.getCustomerByIcNumber("987654-54-3210");
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Jane Doe", result.get().getName());
+        assertEquals("987654-54-3210", result.get().getCustIcNo());
+    }
+
+    @Test
+    @DisplayName("Should return empty when IC number not found")
+    void testGetCustomerByIcNumber_NotFound() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findByCustIcNo("999999-99-9999"))
+                .thenReturn(Optional.empty());
+
+        // Act
+        Optional<Customer> result = customerService.getCustomerByIcNumber("999999-99-9999");
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    @DisplayName("Should handle empty customer list")
+    void testGetAllCustomers_Empty() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // Act
+        List<Customer> result = customerService.getAllCustomers();
+
+        // Assert
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    @DisplayName("Should retrieve all customers with multiple records")
+    void testGetAllCustomers_Multiple() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer customer2 = new Customer();
+        customer2.setCustId("2");
+        customer2.setName("Jane Doe");
+
+        List<Customer> customers = Arrays.asList(testCustomer, customer2);
+        when(customerRepository.findAll()).thenReturn(customers);
+
+        // Act
+        List<Customer> result = customerService.getAllCustomers();
+
+        // Assert
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    @DisplayName("Should update customer with all valid fields")
+    void testUpdateCustomer_AllFields() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer updatedData = new Customer();
+        updatedData.setName("John Updated");
+        updatedData.setEmail("john.updated@example.com");
+        updatedData.setPhoneNumber("9876543210");
+        updatedData.setGender("Female");
+
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(testCustomer);
+
+        // Act
+        Customer result = customerService.updateCustomer("1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        verify(customerRepository, times(1)).save(any(Customer.class));
+    }
+
+    @Test
+    @DisplayName("Should update customer with only name field")
+    void testUpdateCustomer_OnlyName() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer updatedData = new Customer();
+        updatedData.setName("John Updated");
+
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(testCustomer);
+
+        // Act
+        Customer result = customerService.updateCustomer("1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        verify(customerRepository, times(1)).save(any(Customer.class));
+    }
+
+    @Test
+    @DisplayName("Should delete customer successfully")
+    void testDeleteCustomer() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        doNothing().when(customerRepository).deleteById("1");
+
+        // Act
+        customerService.deleteCustomer("1");
+
+        // Assert
+        verify(customerRepository, times(1)).deleteById("1");
+    }
+
+    @Test
+    @DisplayName("Should handle error when deleting customer encounters repository error")
+    void testDeleteCustomer_RepositoryError() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        doThrow(new RuntimeException("Database error")).when(customerRepository).deleteById("1");
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            customerService.deleteCustomer("1");
+        });
+    }
+
+    @Test
+    @DisplayName("Should handle null name in update")
+    void testUpdateCustomer_NullName() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer updatedData = new Customer();
+        updatedData.setName(null); // Don't update
+
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(testCustomer);
+
+        // Act
+        Customer result = customerService.updateCustomer("1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        verify(customerRepository, times(1)).save(any(Customer.class));
+    }
+
+    @Test
+    @DisplayName("Should handle empty string fields in update")
+    void testUpdateCustomer_EmptyStrings() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer updatedData = new Customer();
+        updatedData.setName(""); // Empty string
+        updatedData.setPhoneNumber("");
+
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(testCustomer);
+
+        // Act
+        Customer result = customerService.updateCustomer("1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        verify(customerRepository, times(1)).save(any(Customer.class));
+    }
+
+    @Test
+    @DisplayName("Should handle repository error during authentication")
+    void testAuthenticateCustomer_RepositoryError() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findByCustIcNo("123456-12-1234"))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // Act
+        Optional<Customer> result = customerService.authenticateCustomer("123456-12-1234", "password");
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    @DisplayName("Should handle repository error during getAllCustomers")
+    void testGetAllCustomers_RepositoryError() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(customerRepository.findAll())
+                .thenThrow(new RuntimeException("Database error"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            customerService.getAllCustomers();
+        });
+    }
+
+    @Test
+    @DisplayName("Should update gender field successfully")
+    void testUpdateCustomer_Gender() throws ExecutionException, InterruptedException {
+        // Arrange
+        Customer updatedData = new Customer();
+        updatedData.setGender("Male");
+
+        when(customerRepository.findById("1")).thenReturn(Optional.of(testCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(testCustomer);
+
+        // Act
+        Customer result = customerService.updateCustomer("1", updatedData);
+
+        // Assert
+        assertNotNull(result);
+        verify(customerRepository, times(1)).save(any(Customer.class));
     }
 }

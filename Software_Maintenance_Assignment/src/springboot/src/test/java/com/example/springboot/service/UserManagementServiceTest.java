@@ -29,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -461,5 +462,272 @@ class UserManagementServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(0, result.size());
+    }
+
+    // ==================== ADDITIONAL COVERAGE TESTS ====================
+
+    @Test
+    @DisplayName("Should get user profile by ID successfully")
+    void testGetUserProfileById_Success() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities())
+                .thenReturn((Collection) Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+
+        // Act
+        UserProfileDTO result = userManagementService.getUserProfileById("user123");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("user123", result.getId());
+        assertEquals("user@example.com", result.getEmail());
+        verify(userRepository, times(1)).findById("user123");
+    }
+
+    @Test
+    @DisplayName("Should throw UserNotFoundException when user profile by ID not found")
+    void testGetUserProfileById_NotFound() {
+        // Arrange
+        when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> {
+            userManagementService.getUserProfileById("nonexistent");
+        });
+    }
+
+    @Test
+    @DisplayName("Should update user profile with full name and phone number")
+    void testUpdateUserProfile_Success() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // Act
+        UserProfileDTO result = userManagementService.updateUserProfile("user123", "Jane Doe", "9876543210");
+
+        // Assert
+        assertNotNull(result);
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UserNotFoundException when updating non-existent user")
+    void testUpdateUserProfile_UserNotFound() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> {
+            userManagementService.updateUserProfile("user123", "Jane Doe", "9876543210");
+        });
+    }
+
+    @Test
+    @DisplayName("Should delete user account successfully")
+    void testDeleteUserAccount_Success() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+        doNothing().when(userRepository).deleteById("user123");
+
+        // Act
+        userManagementService.deleteUserAccount("user123");
+
+        // Assert
+        verify(userRepository, times(1)).deleteById("user123");
+    }
+
+    @Test
+    @DisplayName("Should throw UserNotFoundException when deleting non-existent user")
+    void testDeleteUserAccount_NotFound() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> {
+            userManagementService.deleteUserAccount("user123");
+        });
+    }
+
+    @Test
+    @DisplayName("Should fail password change when passwords do not match for admin")
+    void testChangePassword_Admin_PasswordMismatch() {
+        // Arrange
+        PasswordChangeRequestDTO request = PasswordChangeRequestDTO.builder()
+                .currentPassword("oldPassword")
+                .newPassword("newPassword123")
+                .confirmPassword("differentPassword")
+                .build();
+
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("admin123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(adminRepository.findById("admin123")).thenReturn(Optional.of(testAdmin));
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            userManagementService.changePassword(request);
+        });
+    }
+
+    @Test
+    @DisplayName("Should fail password change for superadmin with incorrect password")
+    void testChangePassword_Superadmin_IncorrectCurrentPassword() {
+        // Arrange
+        PasswordChangeRequestDTO request = PasswordChangeRequestDTO.builder()
+                .currentPassword("wrongPassword")
+                .newPassword("newPassword123")
+                .confirmPassword("newPassword123")
+                .build();
+
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_SUPERADMIN"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("superadmin1");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(superadminRepository.findById("superadmin1")).thenReturn(Optional.of(testSuperadmin));
+        when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(InvalidCredentialsException.class, () -> {
+            userManagementService.changePassword(request);
+        });
+    }
+
+    @Test
+    @DisplayName("Should get multiple admins created by superadmin")
+    void testGetAdminsCreatedBySuperadmin_MultipleAdmins() {
+        // Arrange
+        Admin admin1 = new Admin();
+        admin1.setStaffId("admin1");
+        admin1.setEmail("admin1@example.com");
+        admin1.setName("Admin One");
+
+        Admin admin2 = new Admin();
+        admin2.setStaffId("admin2");
+        admin2.setEmail("admin2@example.com");
+        admin2.setName("Admin Two");
+
+        Admin admin3 = new Admin();
+        admin3.setStaffId("admin3");
+        admin3.setEmail("admin3@example.com");
+        admin3.setName("Admin Three");
+
+        List<Admin> admins = Arrays.asList(admin1, admin2, admin3);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("superadmin1");
+        when(adminRepository.findByCreatedBy("superadmin1")).thenReturn(admins);
+
+        // Act
+        List<AdminProfileDTO> result = userManagementService.getAdminsCreatedBySuperadmin();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals("admin1", result.get(0).getStaffId());
+        assertEquals("admin2", result.get(1).getStaffId());
+        assertEquals("admin3", result.get(2).getStaffId());
+    }
+
+    @Test
+    @DisplayName("Should handle null authentication in getCurrentUserProfile")
+    void testGetCurrentUserProfile_NullAuthentication() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(null);
+
+        // Act & Assert - Should handle gracefully
+        assertThrows(Exception.class, () -> {
+            userManagementService.getCurrentUserProfile();
+        });
+    }
+
+    @Test
+    @DisplayName("Should handle null authentication in changePassword")
+    void testChangePassword_NullAuthentication() {
+        // Arrange
+        PasswordChangeRequestDTO request = PasswordChangeRequestDTO.builder()
+                .currentPassword("oldPassword")
+                .newPassword("newPassword123")
+                .confirmPassword("newPassword123")
+                .build();
+
+        when(securityContext.getAuthentication()).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(Exception.class, () -> {
+            userManagementService.changePassword(request);
+        });
+    }
+
+    @Test
+    @DisplayName("Should allow empty phone number in user profile update")
+    void testUpdateUserProfile_EmptyPhoneNumber() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // Act
+        UserProfileDTO result = userManagementService.updateUserProfile("user123", "Jane Doe", "");
+
+        // Assert
+        assertNotNull(result);
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should allow null phone number in user profile update")
+    void testUpdateUserProfile_NullPhoneNumber() {
+        // Arrange
+        Collection<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority("ROLE_USER"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("user123");
+        when(authentication.getAuthorities()).thenAnswer(inv -> authorities);
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // Act
+        UserProfileDTO result = userManagementService.updateUserProfile("user123", "Jane Doe", null);
+
+        // Assert
+        assertNotNull(result);
+        verify(userRepository, times(1)).save(any(User.class));
     }
 }
