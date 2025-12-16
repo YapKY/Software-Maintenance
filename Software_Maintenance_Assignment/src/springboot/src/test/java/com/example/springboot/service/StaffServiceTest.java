@@ -825,4 +825,58 @@ class StaffServiceTest {
             staffService.deleteStaff("NONEXISTENT");
         });
     }
+
+    // ==================== ADDITIONAL TESTS ====================
+
+    @Test
+    @DisplayName("Should authenticate with integer password")
+    void testAuthenticateIntPassword() {
+        when(staffRepository.findByStaffId("S001")).thenReturn(testStaff);
+
+        Staff result = staffService.authenticate("S001", 12345);
+
+        assertNotNull(result);
+        assertEquals("Alice Johnson", result.getName());
+    }
+
+    @Test
+    @DisplayName("Should fail authenticate with integer password if staff not found")
+    void testAuthenticateIntPasswordStaffNotFound() {
+        when(staffRepository.findByStaffId("S999")).thenReturn(null);
+
+        Staff result = staffService.authenticate("S999", 12345);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("Should fail authenticate with integer password if password incorrect")
+    void testAuthenticateIntPasswordIncorrect() {
+        when(staffRepository.findByStaffId("S001")).thenReturn(testStaff);
+
+        Staff result = staffService.authenticate("S001", 54321);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("Should initialize default staff if empty")
+    void testInitializeDefaultStaff() throws ExecutionException, InterruptedException {
+        when(staffRepository.findAll()).thenReturn(Arrays.asList());
+        when(staffRepository.save(any(Staff.class))).thenReturn(new Staff());
+
+        staffService.initializeDefaultStaff();
+
+        verify(staffRepository, times(10)).save(any(Staff.class));
+    }
+
+    @Test
+    @DisplayName("Should skip initialize default staff if not empty")
+    void testInitializeDefaultStaffSkip() throws ExecutionException, InterruptedException {
+        when(staffRepository.findAll()).thenReturn(Arrays.asList(testStaff));
+
+        staffService.initializeDefaultStaff();
+
+        verify(staffRepository, never()).save(any(Staff.class));
+    }
 }
