@@ -5,6 +5,7 @@ import com.example.springboot.dto.request.LoginRequestDTO;
 import com.example.springboot.dto.request.MFARequestDTO;
 import com.example.springboot.dto.request.PasswordResetConfirmRequestDTO;
 import com.example.springboot.dto.request.PasswordResetRequestDTO;
+import com.example.springboot.dto.request.RefreshTokenRequestDTO;
 import com.example.springboot.dto.request.SocialLoginRequestDTO;
 import com.example.springboot.dto.response.AuthResponseDTO;
 import com.example.springboot.dto.response.ErrorResponseDTO;
@@ -45,6 +46,25 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Login failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(AuthResponseDTO.builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
+
+    /**
+     * Refresh Token
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponseDTO> refreshToken(@Valid @RequestBody RefreshTokenRequestDTO request) {
+        try {
+            log.info("Refresh token request received");
+            AuthResponseDTO response = authExecutionService.refreshToken(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Refresh token failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(AuthResponseDTO.builder()
                     .success(false)
