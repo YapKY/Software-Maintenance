@@ -1,4 +1,5 @@
 package com.example.springboot.controller;
+import org.springframework.security.core.Authentication;
 
 import com.example.springboot.model.Flight;
 import com.example.springboot.model.Staff;
@@ -19,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import org.springframework.security.core.GrantedAuthority;
+import java.util.stream.Collectors;
 
 /**
  * Spring MVC Controller for Staff Web Pages (Thymeleaf)
@@ -129,39 +133,59 @@ public class StaffViewController {
      * Staff info is optional now
      */
     @GetMapping("/dashboard")
-    public String showDashboard(HttpSession session, Model model) {
-        try {
-            // Get staff info if exists (optional)
-            Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-            
-            // Get all flights
-            List<Flight> flights = flightService.getAllFlights();
-            
-            // Add attributes to model
-            if (staff != null) {
-                model.addAttribute("staff", staff);
-            } else {
-                // Provide default staff info for UI display
-                Map<String, Object> defaultStaff = new HashMap<>();
-                defaultStaff.put("name", "Admin User");
-                defaultStaff.put("position", "Administrator");
-                model.addAttribute("staff", defaultStaff);
-            }
-            
-            model.addAttribute("flights", flights);
+public String showDashboard(Model model, Authentication authentication) {
+    
+    // Initialize default staff object to prevent null errors
+    Map<String, Object> defaultStaff = new HashMap<>();
+    defaultStaff.put("name", "Admin User");
+    defaultStaff.put("position", "Administrator");
+    defaultStaff.put("role", "ADMIN");
+    
+    // 1. Check if user is authenticated via Spring Security
+    if (authentication != null && authentication.isAuthenticated()) {
+        
+        // Get the username (or staffId, depending on your UserDetails implementation)
+        String username = authentication.getName();
+        
+        // 2. Extract Roles
+        String role = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(r -> r.replace("ROLE_", ""))
+                .collect(Collectors.joining(","));
 
-            return "staff-dashboard-rest";
-
-        } catch (ExecutionException | InterruptedException e) {
-            model.addAttribute("error", "Failed to load flights: " + e.getMessage());
-            // Provide default staff info even on error
-            Map<String, Object> defaultStaff = new HashMap<>();
-            defaultStaff.put("name", "Admin User");
+        // 3. Update staff object with actual authentication info
+        defaultStaff.put("name", username);
+        defaultStaff.put("role", role);
+        if (role.contains("SUPERADMIN")) {
+            defaultStaff.put("position", "Super Administrator");
+        } else if (role.contains("ADMIN")) {
             defaultStaff.put("position", "Administrator");
-            model.addAttribute("staff", defaultStaff);
-            return "staff-dashboard-rest";
         }
+        
+        // 4. Add to Model for Thymeleaf/HTML access
+        model.addAttribute("username", username);
+        model.addAttribute("userRole", role);
+        
+        // Helper booleans for easier "th:if" checks
+        model.addAttribute("isSuperAdmin", role.contains("SUPERADMIN"));
+        model.addAttribute("isAdmin", role.contains("ADMIN"));
+        
+        // Debug log
+        System.out.println("User: " + username + " | Role: " + role);
+    } else {
+        // Not authenticated - set default values
+        model.addAttribute("username", "Guest");
+        model.addAttribute("userRole", "GUEST");
+        model.addAttribute("isSuperAdmin", false);
+        model.addAttribute("isAdmin", false);
     }
+    
+    // CRITICAL: Always add staff object to prevent null errors
+    model.addAttribute("staff", defaultStaff);
+
+    // Return the name of your HTML file
+    return "staff-dashboard-rest"; 
+}
 
     /**
      * Save Flight (Add or Update)
@@ -238,22 +262,44 @@ public class StaffViewController {
      * MODIFIED: Login check removed - accessible from Admin panel
      */
     @GetMapping("/dashboard-rest")
-    public String showRestDashboard(HttpSession session, Model model) {
-        // Get staff info if exists (optional)
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
+public String showRestDashboard(HttpSession session, Model model, Authentication authentication) {
+    
+    // Initialize default staff object
+    Map<String, Object> defaultStaff = new HashMap<>();
+    defaultStaff.put("name", "Admin User");
+    defaultStaff.put("position", "Administrator");
+    defaultStaff.put("role", "ADMIN");
+    
+    // Try to get staff from session first (legacy login)
+    Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
+    
+    if (staff != null) {
+        // Session-based staff info exists
+        model.addAttribute("staff", staff);
+    } else if (authentication != null && authentication.isAuthenticated()) {
+        // Spring Security authentication exists
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(r -> r.replace("ROLE_", ""))
+                .collect(Collectors.joining(","));
         
-        if (staff != null) {
-            model.addAttribute("staff", staff);
-        } else {
-            // Provide default staff info for UI display
-            Map<String, Object> defaultStaff = new HashMap<>();
-            defaultStaff.put("name", "Admin User");
+        defaultStaff.put("name", username);
+        defaultStaff.put("role", role);
+        if (role.contains("SUPERADMIN")) {
+            defaultStaff.put("position", "Super Administrator");
+        } else if (role.contains("ADMIN")) {
             defaultStaff.put("position", "Administrator");
-            model.addAttribute("staff", defaultStaff);
         }
         
-        return "staff-dashboard-rest";
+        model.addAttribute("staff", defaultStaff);
+    } else {
+        // No authentication - use defaults
+        model.addAttribute("staff", defaultStaff);
     }
+    
+    return "staff-dashboard-rest";
+}
 
     // ========================================
     // REPORTS - NO LOGIN REQUIRED
@@ -277,6 +323,7 @@ public class StaffViewController {
             Map<String, Object> defaultStaff = new HashMap<>();
             defaultStaff.put("name", "Admin User");
             defaultStaff.put("position", "Manager");
+            defaultStaff.put("role", "SUPERADMIN");
             model.addAttribute("staff", defaultStaff);
         }
         

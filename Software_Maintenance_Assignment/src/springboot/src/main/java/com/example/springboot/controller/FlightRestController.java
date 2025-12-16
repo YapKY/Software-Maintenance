@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpSession;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import com.google.cloud.firestore.QueryDocumentSnapshot;
-import java.util.concurrent.ExecutionException;
 import com.google.cloud.firestore.Firestore;
-
 
 /**
  * Flight REST API Controller
@@ -33,7 +30,6 @@ public class FlightRestController {
 
     @Autowired
     private Firestore firestore;
-    
 
     /**
      * Get all active flights
@@ -86,7 +82,6 @@ public class FlightRestController {
             String arrivalCountry = searchParams.get("arrivalCountry");
             String departureDate = searchParams.get("departureDate");
 
-
             // Validate inputs
             if (departureCountry == null || arrivalCountry == null || departureDate == null) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -95,9 +90,7 @@ public class FlightRestController {
                 ));
             }
 
-
             List<Flight> flights = flightService.searchFlights(departureCountry, arrivalCountry, departureDate);
-//             List<Flight> flights = flightService.searchFlights(departureCountry, arrivalCountry, departureDate);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -115,23 +108,11 @@ public class FlightRestController {
     /**
      * Add new flight
      * POST /api/flights
-     * 
-     * Validation is done in FlightService layer
+     * * Validation is done in FlightService layer
      */
     @PostMapping
-    public ResponseEntity<?> addFlight(
-            @RequestBody Flight flight,
-            HttpSession session) {
-        
-        // Check authentication
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                "success", false,
-                "message", "Authentication required. Please login."
-            ));
-        }
-
+    public ResponseEntity<?> addFlight(@RequestBody Flight flight) {
+        // Manual authentication check removed
         try {
             Flight createdFlight = flightService.addFlight(flight);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
@@ -156,24 +137,14 @@ public class FlightRestController {
     /**
      * Update flight
      * PUT /api/flights/{documentId}
-     * 
-     * Validation is done in FlightService layer
+     * * Validation is done in FlightService layer
      */
     @PutMapping("/{documentId}")
     public ResponseEntity<?> updateFlight(
             @PathVariable String documentId,
-            @RequestBody Flight flight,
-            HttpSession session) {
+            @RequestBody Flight flight) {
         
-        // Check authentication
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                "success", false,
-                "message", "Authentication required. Please login."
-            ));
-        }
-
+        // Manual authentication check removed
         try {
             Flight updatedFlight = flightService.updateFlight(documentId, flight);
             return ResponseEntity.ok(Map.of(
@@ -198,32 +169,13 @@ public class FlightRestController {
     /**
      * Soft delete flight - Set status to INACTIVE
      * DELETE /api/flights/{documentId}
-     * 
-     * Access: Manager ONLY
-     * Note: This is a SOFT DELETE - flight data is preserved
+     * * Note: This is a SOFT DELETE - flight data is preserved
      */
     @DeleteMapping("/{documentId}")
-    public ResponseEntity<?> deleteFlight(
-            @PathVariable String documentId,
-            HttpSession session) {
+    public ResponseEntity<?> deleteFlight(@PathVariable String documentId) {
         
-        // Check authentication
-        Map<String, Object> staff = (Map<String, Object>) session.getAttribute("staff");
-        if (staff == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                "success", false,
-                "message", "Authentication required. Please login."
-            ));
-        }
-
-        // RBAC: Only Manager can delete flights
-        String position = (String) staff.get("position");
-        if (!"Manager".equalsIgnoreCase(position)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                "success", false,
-                "message", "Access denied. Only Managers can deactivate flights."
-            ));
-        }
+        // Manual authentication and RBAC checks removed.
+        // Ensure you use @PreAuthorize("hasRole('ADMIN')") or similar configuration in SecurityConfig.
 
         try {
             // Get flight info before deactivating
@@ -313,46 +265,42 @@ public class FlightRestController {
         }
     }
 
+    @GetMapping("/{flightId}/seats/stats")
+    public ResponseEntity<?> getSeatStats(@PathVariable String flightId) {
+        try {
+            // Query seats collection for this flight
+            List<QueryDocumentSnapshot> allSeats = firestore.collection("seats")
+                .whereEqualTo("flightId", flightId)
+                .get()
+                .get()
+                .getDocuments();
 
+            int totalSeats = allSeats.size();
+            int bookedSeats = 0;
+            int availableSeats = 0;
 
-@GetMapping("/{flightId}/seats/stats")
-public ResponseEntity<?> getSeatStats(@PathVariable String flightId) {
-    try {
-        // Query seats collection for this flight
-        List<QueryDocumentSnapshot> allSeats = firestore.collection("seats")
-            .whereEqualTo("flightId", flightId)
-            .get()
-            .get()
-            .getDocuments();
-
-        int totalSeats = allSeats.size();
-        int bookedSeats = 0;
-        int availableSeats = 0;
-
-        for (QueryDocumentSnapshot seat : allSeats) {
-            String status = seat.getString("statusSeat");
-            if ("Booked".equalsIgnoreCase(status)) {
-                bookedSeats++;
-            } else if ("Available".equalsIgnoreCase(status)) {
-                availableSeats++;
+            for (QueryDocumentSnapshot seat : allSeats) {
+                String status = seat.getString("statusSeat");
+                if ("Booked".equalsIgnoreCase(status)) {
+                    bookedSeats++;
+                } else if ("Available".equalsIgnoreCase(status)) {
+                    availableSeats++;
+                }
             }
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "flightId", flightId,
+                "totalSeats", totalSeats,
+                "ticketsSold", bookedSeats,
+                "availableSeats", availableSeats
+            ));
+
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Failed to retrieve seat statistics: " + e.getMessage()
+            ));
         }
-
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "flightId", flightId,
-            "totalSeats", totalSeats,
-            "ticketsSold", bookedSeats,
-            "availableSeats", availableSeats
-        ));
-
-    } catch (ExecutionException | InterruptedException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-            "success", false,
-            "message", "Failed to retrieve seat statistics: " + e.getMessage()
-        ));
     }
-   }
-
-
 }

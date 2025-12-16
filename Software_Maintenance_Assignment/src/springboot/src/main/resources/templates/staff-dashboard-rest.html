@@ -256,6 +256,31 @@
         .table tr.inactive-row td strong {
             color: #7f8c8d !important;
         }
+
+        /* ✅ NEW: Role badge styling */
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .role-superadmin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .role-admin {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .role-manager {
+            background: #fff3e0;
+            color: #e65100;
+        }
     </style>
 </head>
 <body>
@@ -265,7 +290,11 @@
         <div class="logo">✈️</div>
         <div class="logo-text">
             <h2 style="margin: 0; font-size: 20px; color: #2c3e50;">Airline Management System</h2>
-            <p style="margin: 0; font-size: 12px; color: #7f8c8d;">Staff Dashboard</p>
+            <p style="margin: 0; font-size: 12px; color: #7f8c8d;">
+    Staff Dashboard
+    <span class="role-badge role-superadmin" th:if="${isSuperAdmin}">SUPERADMIN</span>
+    <span class="role-badge role-admin" th:if="${isAdmin and !isSuperAdmin}">ADMIN</span>
+</p>
         </div>
     </div>
     
@@ -275,11 +304,6 @@
     <div class="sidebar">
         <a href="/staff/dashboard" class="sidebar-item active">
             📋 Manage Flights
-        </a>
-        <a href="/staff/reports" 
-           class="sidebar-item" 
-           th:if="${staff.position == 'Manager'}">
-            📊 Sales Report
         </a>
     </div>
 
@@ -328,7 +352,8 @@
                                 <th>Arrival</th>
                                 <th>Price (Eco/Biz)</th>
                                 <th>Seats</th>
-                                <th>Status</th> <th style="min-width: 180px;">Actions</th>
+                                <th>Status</th>
+                                <th style="min-width: 180px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="flightsTableBody"></tbody>
@@ -347,6 +372,7 @@
     </div>
 </div>
 
+<!-- Modal code remains the same as original -->
 <div class="modal fade" id="flightModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -555,6 +581,8 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     const staffPosition = /*[[${staff.position}]]*/ 'Controller';
+    // ✅ NEW: Get the staff role (SUPERADMIN, ADMIN, etc.)
+    const staffRole = /*[[${staff.role}]]*/ 'ADMIN';
     /*]]>*/
 
     let departureDatePicker, arrivalDatePicker;
@@ -731,9 +759,9 @@
                 row.classList.add('inactive-row'); // Add CSS class for dimming
             }
 
-            // Determine Action Button (Delete vs Activate)
+            // ✅ MODIFIED: Only SUPERADMIN can deactivate/activate flights
             let actionButton = '';
-            if (staffPosition === 'Manager') {
+            if (staffRole === 'SUPERADMIN') {
                 if (isInactive) {
                     // Show ACTIVATE button for deleted flights
                     actionButton = `
@@ -742,14 +770,18 @@
                         </button>
                     `;
                 } else {
-                    // Show DELETE button for active flights
+                    // Show DEACTIVATE button for active flights
                     actionButton = `
                         <button class="btn btn-danger btn-sm d-flex align-items-center gap-1" onclick="deactivateFlight('${flight.documentId}', '${flight.flightId}')">
-                             Inactivate 
+                            ❌ Inactivate 
                         </button>
                     `;
                 }
+            } else {
+                // Non-superadmins cannot see deactivate/activate buttons
+                actionButton = `<small class="text-muted">SUPERADMIN only</small>`;
             }
+            console.log('Staff Role:', staffRole);
 
             row.innerHTML = `
                 <td><strong style="color: #667eea;">${flight.flightId}</strong></td>
@@ -922,6 +954,12 @@
 
     // ==================== DEACTIVATE FLIGHT (DELETE) ====================
     async function deactivateFlight(documentId, flightId) {
+        // ✅ Double-check permission
+        if (staffRole !== 'SUPERADMIN') {
+            showError('Access denied. Only SUPERADMIN can deactivate flights.');
+            return;
+        }
+
         if (!confirm(`Are you sure you want to deactivate flight ${flightId}?\n\nData will be preserved as INACTIVE.`)) {
             return;
         }
@@ -947,6 +985,12 @@
 
     // ==================== ACTIVATE FLIGHT (RESTORE) ====================
     async function activateFlight(documentId, flightId) {
+        // ✅ Double-check permission
+        if (staffRole !== 'SUPERADMIN') {
+            showError('Access denied. Only SUPERADMIN can activate flights.');
+            return;
+        }
+
         if (!confirm(`Are you sure you want to RE-ACTIVATE flight ${flightId}?`)) {
             return;
         }
