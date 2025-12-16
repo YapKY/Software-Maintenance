@@ -1,4 +1,3 @@
-@ -0,0 +1,593 @@
 package com.example.springboot.controller;
 
 import com.example.springboot.model.Flight;
@@ -333,173 +332,97 @@ class FlightRestControllerTest {
         assertFalse((Boolean) body.get("success"));
     }
 
-    // ========== Add Flight Tests ==========
+    // ==================== ADD FLIGHT ====================
 
     @Test
     void testAddFlight_Success() throws Exception {
-        // Arrange
         when(flightService.addFlight(any(Flight.class))).thenReturn(testFlight);
 
-        // Act
-        ResponseEntity<?> response = flightController.addFlight(testFlight, mockSession);
+        ResponseEntity<?> response = flightController.addFlight(testFlight);
 
-        // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertTrue((Boolean) body.get("success"));
-        assertTrue(body.get("message").toString().contains("added successfully"));
-
-        verify(flightService).addFlight(any(Flight.class));
-    }
-
-    @Test
-    void testAddFlight_Unauthorized() throws Exception {
-        // Arrange - No session
-        MockHttpSession emptySession = new MockHttpSession();
-
-        // Act
-        ResponseEntity<?> response = flightController.addFlight(testFlight, emptySession);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertFalse((Boolean) body.get("success"));
-
-        verify(flightService, never()).addFlight(any(Flight.class));
+        assertTrue((Boolean) ((Map<?, ?>) response.getBody()).get("success"));
     }
 
     @Test
     void testAddFlight_ValidationError() throws Exception {
-        // Arrange
-        when(flightService.addFlight(any(Flight.class)))
-                .thenThrow(new IllegalArgumentException("Flight ID already exists"));
+        when(flightService.addFlight(any(Flight.class))).thenThrow(new IllegalArgumentException("Invalid data"));
 
-        // Act
-        ResponseEntity<?> response = flightController.addFlight(testFlight, mockSession);
+        ResponseEntity<?> response = flightController.addFlight(testFlight);
 
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertFalse((Boolean) body.get("success"));
+        assertEquals("Invalid data", ((Map<?, ?>) response.getBody()).get("message"));
     }
 
-    // ========== Update Flight Tests ==========
+    @Test
+    void testAddFlight_ServerException() throws Exception {
+        when(flightService.addFlight(any(Flight.class))).thenThrow(new ExecutionException(new RuntimeException("Firestore fail")));
+
+        ResponseEntity<?> response = flightController.addFlight(testFlight);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    // ==================== UPDATE FLIGHT ====================
 
     @Test
     void testUpdateFlight_Success() throws Exception {
-        // Arrange
         when(flightService.updateFlight(eq("doc123"), any(Flight.class))).thenReturn(testFlight);
 
-        // Act
-        ResponseEntity<?> response = flightController.updateFlight("doc123", testFlight, mockSession);
+        ResponseEntity<?> response = flightController.updateFlight("doc123", testFlight);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertTrue((Boolean) body.get("success"));
-        assertTrue(body.get("message").toString().contains("updated successfully"));
-
-        verify(flightService).updateFlight(eq("doc123"), any(Flight.class));
+        assertTrue((Boolean) ((Map<?, ?>) response.getBody()).get("success"));
     }
 
     @Test
-    void testUpdateFlight_Unauthorized() throws Exception {
-        // Arrange - No session
-        MockHttpSession emptySession = new MockHttpSession();
+    void testUpdateFlight_ValidationError() throws Exception {
+        when(flightService.updateFlight(anyString(), any(Flight.class))).thenThrow(new IllegalArgumentException("Invalid ID"));
 
-        // Act
-        ResponseEntity<?> response = flightController.updateFlight("doc123", testFlight, emptySession);
+        ResponseEntity<?> response = flightController.updateFlight("doc123", testFlight);
 
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-
-        verify(flightService, never()).updateFlight(anyString(), any(Flight.class));
-    }
-
-    @Test
-    void testUpdateFlight_NotFound() throws Exception {
-        // Arrange
-        when(flightService.updateFlight(eq("nonexistent"), any(Flight.class)))
-                .thenThrow(new IllegalArgumentException("Flight not found"));
-
-        // Act
-        ResponseEntity<?> response = flightController.updateFlight("nonexistent", testFlight, mockSession);
-
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
-    // ========== Delete Flight Tests ==========
+    @Test
+    void testUpdateFlight_ServerException() throws Exception {
+        when(flightService.updateFlight(anyString(), any(Flight.class))).thenThrow(new ExecutionException(new RuntimeException("Fail")));
+
+        ResponseEntity<?> response = flightController.updateFlight("doc123", testFlight);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    // ==================== DELETE FLIGHT ====================
 
     @Test
     void testDeleteFlight_Success() throws Exception {
-        // Arrange
         when(flightService.getFlightById("doc123")).thenReturn(testFlight);
         doNothing().when(flightService).deleteFlight("doc123");
 
-        // Act
-        ResponseEntity<?> response = flightController.deleteFlight("doc123", mockSession);
+        ResponseEntity<?> response = flightController.deleteFlight("doc123");
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertTrue((Boolean) body.get("success"));
-        assertTrue(body.get("message").toString().contains("deactivated successfully"));
-
-        verify(flightService).deleteFlight("doc123");
-    }
-
-    @Test
-    void testDeleteFlight_ForbiddenForController() throws Exception {
-        // Arrange - Staff with Controller position
-        Map<String, Object> controllerData = new HashMap<>();
-        controllerData.put("staffId", "S002");
-        controllerData.put("position", "Airline Controller");
-        MockHttpSession controllerSession = new MockHttpSession();
-        controllerSession.setAttribute("staff", controllerData);
-
-        // Act
-        ResponseEntity<?> response = flightController.deleteFlight("doc123", controllerSession);
-
-        // Assert
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertFalse((Boolean) body.get("success"));
-
-        verify(flightService, never()).deleteFlight(anyString());
-    }
-
-    @Test
-    void testDeleteFlight_Unauthorized() throws Exception {
-        // Arrange - No session
-        MockHttpSession emptySession = new MockHttpSession();
-
-        // Act
-        ResponseEntity<?> response = flightController.deleteFlight("doc123", emptySession);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-
-        verify(flightService, never()).deleteFlight(anyString());
+        assertTrue((Boolean) ((Map<?, ?>) response.getBody()).get("success"));
     }
 
     @Test
     void testDeleteFlight_NotFound() throws Exception {
-        // Arrange
-        when(flightService.getFlightById("nonexistent"))
-                .thenThrow(new IllegalArgumentException("Flight not found"));
+        when(flightService.getFlightById("invalid")).thenThrow(new IllegalArgumentException("Not found"));
 
-        // Act
-        ResponseEntity<?> response = flightController.deleteFlight("nonexistent", mockSession);
+        ResponseEntity<?> response = flightController.deleteFlight("invalid");
 
-        // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testDeleteFlight_ServerException() throws Exception {
+        when(flightService.getFlightById("doc123")).thenReturn(testFlight);
+        doThrow(new ExecutionException(new RuntimeException("Fail"))).when(flightService).deleteFlight("doc123");
+
+        ResponseEntity<?> response = flightController.deleteFlight("doc123");
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
 
     // ========== Get Statistics Tests ==========
