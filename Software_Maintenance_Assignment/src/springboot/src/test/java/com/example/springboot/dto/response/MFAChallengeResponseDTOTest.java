@@ -1,40 +1,46 @@
 package com.example.springboot.dto.response;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("MFAChallengeResponseDTO Tests")
 class MFAChallengeResponseDTOTest {
 
     @Test
-    @DisplayName("Should create MFAChallengeResponseDTO")
-    void testValid() {
+    void testBuilderAndGetters() {
         MFAChallengeResponseDTO dto = MFAChallengeResponseDTO.builder()
                 .mfaRequired(true)
-                .sessionToken("session-token")
-                .message("MFA required")
-                .qrCodeUrl("https://example.com/qr")
+                .sessionToken("sess-token")
+                .message("Scan QR")
+                .qrCodeUrl("http://qr")
                 .build();
-        
+
         assertTrue(dto.getMfaRequired());
-        assertEquals("session-token", dto.getSessionToken());
-        assertEquals("MFA required", dto.getMessage());
-        assertEquals("https://example.com/qr", dto.getQrCodeUrl());
+        assertEquals("sess-token", dto.getSessionToken());
+        assertEquals("Scan QR", dto.getMessage());
+        assertEquals("http://qr", dto.getQrCodeUrl());
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
-        MFAChallengeResponseDTO dto1 = new MFAChallengeResponseDTO();
-        dto1.setMfaRequired(true);
-        dto1.setSessionToken("token");
-        dto1.setMessage("Test");
-        dto1.setQrCodeUrl("url");
-        
-        MFAChallengeResponseDTO dto2 = new MFAChallengeResponseDTO(true, "token", "Test", "url");
-        
+    void testConstructorsAndSetters() {
+        MFAChallengeResponseDTO dto = new MFAChallengeResponseDTO();
+        dto.setMfaRequired(false);
+        assertFalse(dto.getMfaRequired());
+
+        MFAChallengeResponseDTO dtoAll = new MFAChallengeResponseDTO(true, "s", "m", "u");
+        assertEquals("s", dtoAll.getSessionToken());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        MFAChallengeResponseDTO dto1 = MFAChallengeResponseDTO.builder().sessionToken("S1").build();
+        MFAChallengeResponseDTO dto2 = MFAChallengeResponseDTO.builder().sessionToken("S1").build();
         assertEquals(dto1, dto2);
-        assertNotNull(dto1.toString());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        MFAChallengeResponseDTO dto = MFAChallengeResponseDTO.builder().message("MFA").build();
+        assertTrue(dto.toString().contains("MFA"));
     }
 }

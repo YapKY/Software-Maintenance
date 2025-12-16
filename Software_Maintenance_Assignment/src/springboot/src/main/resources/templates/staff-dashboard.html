@@ -362,8 +362,8 @@
                                             th:onclick="'editFlight(\'' + ${flight.documentId} + '\')'">
                                         ✏️ Edit
                                     </button>
+                                    <!-- ✅ REMOVED th:if - Now everyone can delete -->
                                     <button class="btn btn-danger btn-sm" 
-                                            th:if="${staff.position == 'Manager'}"
                                             th:onclick="'deleteFlight(\'' + ${flight.documentId} + '\', \'' + ${flight.flightId} + '\')'">
                                         🗑️ Delete
                                     </button>
@@ -556,14 +556,9 @@
         }
     }
 
-    // Delete Flight
+    // ✅ MODIFIED: Delete Flight - Now everyone can delete (removed position check)
     async function deleteFlight(documentId, flightId) {
-        if (!confirm(`Are you sure you want to delete flight ${flightId}?`)) {
-            return;
-        }
-
-        if (staffPosition !== 'Manager') {
-            alert('Access denied. Only Managers can delete flights.');
+        if (!confirm(`Are you sure you want to delete flight ${flightId}?\n\nThis action cannot be undone.`)) {
             return;
         }
 

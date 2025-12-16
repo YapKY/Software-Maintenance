@@ -38,6 +38,7 @@ class PasswordResetRequestDTOTest {
                 .build();
         Set<ConstraintViolation<PasswordResetRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Email is required")));
     }
 
     @Test
@@ -48,6 +49,7 @@ class PasswordResetRequestDTOTest {
                 .build();
         Set<ConstraintViolation<PasswordResetRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Invalid email format")));
     }
 
     @Test
@@ -61,5 +63,6 @@ class PasswordResetRequestDTOTest {
         assertEquals(dto1, dto2);
         assertEquals("test@example.com", dto2.getEmail());
         assertNotNull(dto1.toString());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
     }
 }

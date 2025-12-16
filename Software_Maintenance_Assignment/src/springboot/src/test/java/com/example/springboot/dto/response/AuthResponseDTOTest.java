@@ -1,65 +1,55 @@
 package com.example.springboot.dto.response;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("AuthResponseDTO Tests")
 class AuthResponseDTOTest {
 
     @Test
-    @DisplayName("Should create AuthResponseDTO with tokens")
-    void testWithTokens() {
-        JWTResponseDTO tokens = JWTResponseDTO.builder()
-                .accessToken("access")
-                .refreshToken("refresh")
-                .build();
-        
+    void testBuilderAndGetters() {
+        JWTResponseDTO jwt = new JWTResponseDTO();
         AuthResponseDTO dto = AuthResponseDTO.builder()
                 .success(true)
                 .message("Login successful")
-                .tokens(tokens)
+                .tokens(jwt)
                 .requiresMfa(false)
-                .email("user@example.com")
+                .mfaSessionToken("session-123")
+                .email("user@test.com")
                 .build();
-        
+
         assertTrue(dto.getSuccess());
         assertEquals("Login successful", dto.getMessage());
-        assertNotNull(dto.getTokens());
+        assertEquals(jwt, dto.getTokens());
         assertFalse(dto.getRequiresMfa());
-        assertEquals("user@example.com", dto.getEmail());
+        assertEquals("session-123", dto.getMfaSessionToken());
+        assertEquals("user@test.com", dto.getEmail());
     }
 
     @Test
-    @DisplayName("Should create AuthResponseDTO requiring MFA")
-    void testRequiringMfa() {
-        AuthResponseDTO dto = AuthResponseDTO.builder()
-                .success(true)
-                .message("MFA required")
-                .tokens(null)
-                .requiresMfa(true)
-                .mfaSessionToken("session-token")
-                .email("user@example.com")
-                .build();
-        
-        assertTrue(dto.getSuccess());
+    void testAllArgsConstructor() {
+        AuthResponseDTO dto = new AuthResponseDTO(true, "Msg", null, true, "token", "email@test.com");
         assertTrue(dto.getRequiresMfa());
-        assertEquals("session-token", dto.getMfaSessionToken());
-        assertNull(dto.getTokens());
+        assertEquals("email@test.com", dto.getEmail());
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
-        AuthResponseDTO dto1 = new AuthResponseDTO();
-        dto1.setSuccess(true);
-        dto1.setMessage("Test");
-        dto1.setRequiresMfa(false);
-        dto1.setEmail("test@example.com");
-        
-        AuthResponseDTO dto2 = new AuthResponseDTO(true, "Test", null, false, null, "test@example.com");
-        
-        assertEquals(dto1.getSuccess(), dto2.getSuccess());
-        assertNotNull(dto1.toString());
+    void testSetters() {
+        AuthResponseDTO dto = new AuthResponseDTO();
+        dto.setEmail("new@test.com");
+        assertEquals("new@test.com", dto.getEmail());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        AuthResponseDTO dto1 = AuthResponseDTO.builder().email("e1").build();
+        AuthResponseDTO dto2 = AuthResponseDTO.builder().email("e1").build();
+        assertEquals(dto1, dto2);
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+    
+    @Test
+    void testToString() {
+        AuthResponseDTO dto = AuthResponseDTO.builder().message("Auth").build();
+        assertTrue(dto.toString().contains("Auth"));
     }
 }

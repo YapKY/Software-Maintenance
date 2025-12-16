@@ -3,78 +3,76 @@ package com.example.springboot.model;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Test class for Flight model
- */
 class FlightTest {
 
     @Test
-    void testFlightGettersAndSetters() {
-        // Arrange & Act
-        Flight flight = new Flight();
-        flight.setDocumentId("doc123");
-        flight.setFlightId("F001");
-        flight.setDepartureCountry("Malaysia");
-        flight.setArrivalCountry("Japan");
-        flight.setDepartureDate("11/11/2023");
-        flight.setArrivalDate("12/11/2023");
-        flight.setDepartureTime(1300);
-        flight.setArrivalTime(2000);
-        flight.setBoardingTime(1200);
-        flight.setEconomyPrice(200.00);
-        flight.setBusinessPrice(400.00);
-        flight.setPlaneNo("PL04");
-        flight.setTotalSeats(32);
+    void testCustomConstructor() {
+        // This constructor initializes status to "ACTIVE" and doesn't take documentId
+        Flight flight = new Flight(
+            "F001", "Malaysia", "Japan", 
+            "2023-01-01", "2023-01-02", 
+            1000, 1800, 900, 
+            100.0, 500.0, "B777", 200
+        );
 
-        // Assert
-        assertEquals("doc123", flight.getDocumentId());
         assertEquals("F001", flight.getFlightId());
+        assertEquals("ACTIVE", flight.getStatus());
         assertEquals("Malaysia", flight.getDepartureCountry());
-        assertEquals("Japan", flight.getArrivalCountry());
-        assertEquals("11/11/2023", flight.getDepartureDate());
-        assertEquals("12/11/2023", flight.getArrivalDate());
-        assertEquals(1300, flight.getDepartureTime());
-        assertEquals(2000, flight.getArrivalTime());
-        assertEquals(1200, flight.getBoardingTime());
-        assertEquals(200.00, flight.getEconomyPrice());
-        assertEquals(400.00, flight.getBusinessPrice());
-        assertEquals("PL04", flight.getPlaneNo());
-        assertEquals(32, flight.getTotalSeats());
+        assertEquals(200, flight.getTotalSeats());
+        assertNull(flight.getDocumentId()); // Not set in custom constructor
     }
 
     @Test
-    void testFlightDefaultConstructor() {
-        // Act
-        Flight flight = new Flight();
+    void testLombokAllArgsConstructor() {
+        // Lombok generates a constructor for ALL fields, including status and documentId
+        Flight flight = new Flight(
+            "doc1", "F002", "SG", "TH", 
+            "date1", "date2", 
+            1000, 1200, 900, 
+            50.0, 150.0, "A320", 100, "INACTIVE"
+        );
 
-        // Assert
-        assertNull(flight.getDocumentId());
-        assertNull(flight.getFlightId());
-        assertEquals(0, flight.getDepartureTime());
-        assertEquals(0.0, flight.getEconomyPrice());
+        assertEquals("doc1", flight.getDocumentId());
+        assertEquals("INACTIVE", flight.getStatus());
     }
 
     @Test
-    void testFlightPriceValidation() {
-        // Arrange
+    void testStatusManagement() {
         Flight flight = new Flight();
-        flight.setEconomyPrice(200.00);
-        flight.setBusinessPrice(400.00);
+        flight.setStatus("INACTIVE"); // Explicitly set to inactive first
+        
+        assertFalse(flight.isActive());
+        
+        flight.activate();
+        assertTrue(flight.isActive());
+        assertEquals("ACTIVE", flight.getStatus());
 
-        // Assert
-        assertTrue(flight.getBusinessPrice() > flight.getEconomyPrice());
+        flight.deactivate();
+        assertFalse(flight.isActive());
+        assertEquals("INACTIVE", flight.getStatus());
     }
 
     @Test
-    void testFlightTimeValidation() {
-        // Arrange
+    void testSettersAndNoArgsConstructor() {
         Flight flight = new Flight();
-        flight.setBoardingTime(1200);
-        flight.setDepartureTime(1300);
-        flight.setArrivalTime(2000);
+        flight.setFlightId("F999");
+        flight.setEconomyPrice(99.99);
+        
+        assertEquals("F999", flight.getFlightId());
+        assertEquals(99.99, flight.getEconomyPrice());
+        // Default status initialization in field definition
+        assertEquals("ACTIVE", flight.getStatus()); 
+    }
 
-        // Assert
-        assertTrue(flight.getDepartureTime() > flight.getBoardingTime());
-        assertTrue(flight.getArrivalTime() > flight.getDepartureTime());
+    @Test
+    void testEqualsHashCodeToString() {
+        Flight f1 = new Flight();
+        f1.setFlightId("F1");
+        Flight f2 = new Flight();
+        f2.setFlightId("F1");
+        
+        assertEquals(f1, f2);
+        assertEquals(f1.hashCode(), f2.hashCode());
+        assertTrue(f1.toString().contains("F1"));
     }
 }

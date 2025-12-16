@@ -38,6 +38,7 @@ class RefreshTokenRequestDTOTest {
                 .build();
         Set<ConstraintViolation<RefreshTokenRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Refresh token is required")));
     }
 
     @Test
@@ -50,5 +51,6 @@ class RefreshTokenRequestDTOTest {
         
         assertEquals(dto1, dto2);
         assertNotNull(dto1.toString());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
     }
 }

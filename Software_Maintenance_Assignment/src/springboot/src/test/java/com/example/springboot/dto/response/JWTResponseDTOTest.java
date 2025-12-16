@@ -56,6 +56,7 @@ class JWTResponseDTOTest {
                 3600L, Role.ADMIN, "admin@example.com", "Admin User");
         
         assertEquals(dto1, dto2);
+        assertEquals(dto1.hashCode(), dto2.hashCode());
         assertNotNull(dto1.toString());
     }
 }

@@ -42,6 +42,7 @@ class PasswordResetConfirmRequestDTOTest {
                 .build();
         Set<ConstraintViolation<PasswordResetConfirmRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Token is required")));
     }
 
     @Test
@@ -54,6 +55,7 @@ class PasswordResetConfirmRequestDTOTest {
                 .build();
         Set<ConstraintViolation<PasswordResetConfirmRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("New password is required")));
     }
 
     @Test
@@ -66,6 +68,7 @@ class PasswordResetConfirmRequestDTOTest {
                 .build();
         Set<ConstraintViolation<PasswordResetConfirmRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("Confirm password is required")));
     }
 
     @Test
@@ -80,5 +83,7 @@ class PasswordResetConfirmRequestDTOTest {
         
         assertEquals(dto1, dto2);
         assertNotNull(dto1.toString());
+        assertEquals(dto1.getToken(), dto2.getToken());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
     }
 }

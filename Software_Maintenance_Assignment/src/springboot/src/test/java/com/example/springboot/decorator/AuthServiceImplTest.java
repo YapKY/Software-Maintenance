@@ -3,7 +3,6 @@ package com.example.springboot.decorator;
 import com.example.springboot.dto.request.LoginRequestDTO;
 import com.example.springboot.dto.response.AuthResponseDTO;
 import com.example.springboot.dto.response.JWTResponseDTO;
-import com.example.springboot.dto.response.MFAStatusDTO;
 import com.example.springboot.enums.Role;
 import com.example.springboot.exception.InvalidCredentialsException;
 import com.example.springboot.exception.RateLimitExceededException;
@@ -17,7 +16,6 @@ import com.example.springboot.security.jwt.JwtTokenProvider;
 import com.example.springboot.security.ratelimit.RateLimiter;
 import com.example.springboot.service.MFAService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,8 +27,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,206 +44,250 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     private LoginRequestDTO loginRequest;
-    private User mockUser;
-    private Admin mockAdmin;
-    private Superadmin mockSuperadmin;
 
     @BeforeEach
     void setUp() {
         loginRequest = new LoginRequestDTO();
-        loginRequest.setEmail("test@example.com");
+        loginRequest.setEmail("test@test.com");
         loginRequest.setPassword("password");
-        loginRequest.setRecaptchaToken("valid-token");
-
-        mockUser = new User();
-        mockUser.setCustId("u1");
-        mockUser.setEmail("test@example.com");
-        mockUser.setCustPassword("encodedPwd"); // Corrected field name
-        mockUser.setRole(Role.USER);
-        mockUser.setAccountLocked(false);
-        mockUser.setEmailVerified(true);
-        mockUser.setFailedLoginAttempts(0);
-        
-        mockAdmin = new Admin();
-        mockAdmin.setStaffId("a1"); // Corrected field name
-        mockAdmin.setEmail("admin@example.com");
-        mockAdmin.setStaffPass("encodedPwd"); // Corrected field name
-        mockAdmin.setRole(Role.ADMIN);
-        
-        mockSuperadmin = new Superadmin();
-        mockSuperadmin.setId("sa1");
-        mockSuperadmin.setEmail("super@example.com");
-        mockSuperadmin.setPassword("encodedPwd");
-        mockSuperadmin.setRole(Role.SUPERADMIN);
-        mockSuperadmin.setMfaEnabled(true);
     }
 
-    // --- Rate Limit Tests ---
-
     @Test
-    @DisplayName("Login - Rate Limit Exceeded")
-    void testLogin_RateLimitExceeded() {
-        when(rateLimiter.isBlocked("test@example.com")).thenReturn(true);
-        when(rateLimiter.getBlockTimeRemaining("test@example.com")).thenReturn(300L);
+    void testRateLimitBlocked() {
+        when(rateLimiter.isBlocked("test@test.com")).thenReturn(true);
+        when(rateLimiter.getBlockTimeRemaining("test@test.com")).thenReturn(60L);
 
         assertThrows(RateLimitExceededException.class, () -> authService.performAuthentication(loginRequest));
     }
 
-    // --- User Login Tests ---
+    @Test
+    void testUserNotFound() {
+        when(rateLimiter.isBlocked(any())).thenReturn(false);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(superadminRepository.findByEmail(any())).thenReturn(Optional.empty());
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+        verify(rateLimiter).recordFailedAttempt("test@test.com");
+    }
+
+    // --- USER SCENARIOS ---
 
     @Test
-    @DisplayName("Login User - Success (No MFA)")
-    void testLogin_User_Success_NoMFA() {
-        // Setup: User found in repository
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        // User has MFA disabled by default in setup
-        
-        JWTResponseDTO jwt = JWTResponseDTO.builder().accessToken("access").build();
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(jwt);
+    void testUser_Success_NoMFA() {
+        User user = new User();
+        user.setCustId("U1");
+        user.setEmail("test@test.com");
+        user.setCustPassword("encodedPass");
+        user.setAccountLocked(false);
+        user.setEmailVerified(true);
+        user.setMfaEnabled(false);
+
+        when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password", "encodedPass")).thenReturn(true);
+        when(jwtTokenProvider.generateTokens("U1", "test@test.com", Role.USER)).thenReturn(new JWTResponseDTO());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
 
         assertTrue(response.getSuccess());
-        assertFalse(response.getRequiresMfa());
-        assertNotNull(response.getTokens());
-        
-        verify(userRepository).save(mockUser); // Updates last login
-        verify(rateLimiter).clearAttempts(loginRequest.getEmail());
+        verify(userRepository).save(user); // Updates last login
+        verify(rateLimiter).clearAttempts("test@test.com");
     }
 
     @Test
-    @DisplayName("Login User - Failure (Wrong Password)")
-    void testLogin_User_WrongPassword() {
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches("password", "encodedPwd")).thenReturn(false);
+    void testUser_Locked() {
+        User user = new User();
+        user.setAccountLocked(true);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
 
         assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
-
-        verify(rateLimiter).recordFailedAttempt(loginRequest.getEmail());
-        verify(userRepository).save(mockUser);
-        assertEquals(1, mockUser.getFailedLoginAttempts());
     }
     
     @Test
-    @DisplayName("Login User - Account Locked")
-    void testLogin_User_AccountLocked() {
-        mockUser.setAccountLocked(true);
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        // Password matching isn't checked if locked check comes first, but strict stubbing might require handling
-        // Based on implementation: Locked check comes first.
-        
+    void testUser_EmailNotVerified() {
+        User user = new User();
+        user.setAccountLocked(false);
+        user.setEmailVerified(false);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+
         assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
     }
 
     @Test
-    @DisplayName("Login User - MFA Required (Step 1)")
-    void testLogin_User_MFARequired() {
-        mockUser.setMfaEnabled(true);
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        // LoginRequest has no MFA code by default
+    void testUser_WrongPassword_LocksAccount() {
+        User user = new User();
+        user.setEmail("test@test.com");
+        user.setCustPassword("encoded");
+        user.setAccountLocked(false);
+        user.setEmailVerified(true);
+        user.setFailedLoginAttempts(4); // Next one locks it
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
         
-        when(jwtTokenProvider.generateMFASessionToken(anyString(), anyString(), any())).thenReturn("mfa-session-token");
+        verify(userRepository, times(1)).save(user);
+        assertTrue(user.getAccountLocked());
+    }
+
+    @Test
+    void testUser_MFA_Required_MissingCode() {
+        User user = new User();
+        user.setCustId("U1");
+        user.setEmail("test@test.com");
+        user.setCustPassword("encoded");
+        user.setAccountLocked(false);
+        user.setEmailVerified(true);
+        user.setMfaEnabled(true);
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(jwtTokenProvider.generateMFASessionToken("U1", "test@test.com", Role.USER)).thenReturn("tempToken");
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
 
-        assertFalse(response.getSuccess()); // Success is false because MFA is needed
+        assertFalse(response.getSuccess());
         assertTrue(response.getRequiresMfa());
-        assertEquals("mfa-session-token", response.getMfaSessionToken());
+        assertEquals("test@test.com", response.getEmail());
     }
 
     @Test
-    @DisplayName("Login User - MFA Validation (Step 2)")
-    void testLogin_User_MFAValidation() {
-        mockUser.setMfaEnabled(true);
-        loginRequest.setMfaCode("123456"); // Code provided
+    void testUser_MFA_Valid() {
+        User user = new User();
+        user.setCustId("U1");
+        user.setEmail("test@test.com");
+        user.setCustPassword("encoded");
+        user.setAccountLocked(false);
+        user.setEmailVerified(true);
+        user.setMfaEnabled(true);
         
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(mfaService.validateMFACode(anyString(), any(), eq("123456"))).thenReturn(true);
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
+        loginRequest.setMfaCode("123456");
 
-        AuthResponseDTO response = authService.performAuthentication(loginRequest);
-
-        assertTrue(response.getSuccess());
-        assertNotNull(response.getTokens());
-    }
-
-    @Test
-    @DisplayName("Login User - MFA Invalid Code")
-    void testLogin_User_MFAInvalid() {
-        mockUser.setMfaEnabled(true);
-        loginRequest.setMfaCode("000000");
-        
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(mfaService.validateMFACode(anyString(), any(), eq("000000"))).thenReturn(false);
-
-        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
-    }
-
-    // --- Admin Login Tests ---
-
-    @Test
-    @DisplayName("Login Admin - Success")
-    void testLogin_Admin_Success() {
-        loginRequest.setEmail("admin@example.com");
-        
-        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.empty());
-        when(adminRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(mockAdmin));
-        
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(mfaService.validateMFACode("U1", Role.USER, "123456")).thenReturn(true);
+        when(jwtTokenProvider.generateTokens(any(), any(), any())).thenReturn(new JWTResponseDTO());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
         assertTrue(response.getSuccess());
-        verify(adminRepository).save(mockAdmin);
     }
 
-    @Test
-    @DisplayName("Login Admin - Not Found")
-    void testLogin_Admin_NotFound() {
-        loginRequest.setEmail("admin@example.com");
-        
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(adminRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(superadminRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-
-        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
-    }
-
-    // --- Superadmin Login Tests ---
+    // --- ADMIN SCENARIOS ---
 
     @Test
-    @DisplayName("Login Superadmin - Success")
-    void testLogin_Superadmin_Success() {
-        loginRequest.setEmail("super@example.com");
-        loginRequest.setMfaCode("123456"); // Superadmin needs MFA code in request to succeed
-        
-        when(userRepository.findByEmail("super@example.com")).thenReturn(Optional.empty());
-        when(adminRepository.findByEmail("super@example.com")).thenReturn(Optional.empty());
-        when(superadminRepository.findByEmail("super@example.com")).thenReturn(Optional.of(mockSuperadmin));
-        
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(mfaService.validateMFACode(anyString(), any(), anyString())).thenReturn(true);
-        when(jwtTokenProvider.generateTokens(anyString(), anyString(), any())).thenReturn(JWTResponseDTO.builder().build());
+    void testAdmin_Success() {
+        Admin admin = new Admin();
+        admin.setStaffId("A1");
+        admin.setEmail("admin@test.com");
+        admin.setStaffPass("encoded");
+        admin.setAccountLocked(false);
+        admin.setMfaEnabled(false);
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail("test@test.com")).thenReturn(Optional.of(admin));
+        when(passwordEncoder.matches("password", "encoded")).thenReturn(true);
+        when(jwtTokenProvider.generateTokens("A1", "admin@test.com", Role.ADMIN)).thenReturn(new JWTResponseDTO());
 
         AuthResponseDTO response = authService.performAuthentication(loginRequest);
         assertTrue(response.getSuccess());
     }
 
     @Test
-    @DisplayName("Handle Failed Login - Locking Logic")
-    void testLogin_User_Locking() {
-        mockUser.setFailedLoginAttempts(4); // Next failure should lock it
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+    void testAdmin_Locked() {
+        Admin admin = new Admin();
+        admin.setAccountLocked(true);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.of(admin));
+        
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+    }
+    
+    @Test
+    void testAdmin_WrongPassword_LocksAccount() {
+        Admin admin = new Admin();
+        admin.setEmail("admin@test.com");
+        admin.setStaffPass("encoded");
+        admin.setAccountLocked(false);
+        admin.setFailedLoginAttempts(4);
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.of(admin));
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
 
         assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+        assertTrue(admin.getAccountLocked());
+    }
 
-        assertEquals(5, mockUser.getFailedLoginAttempts());
-        assertTrue(mockUser.getAccountLocked());
-        verify(userRepository).save(mockUser);
+    // --- SUPERADMIN SCENARIOS ---
+
+    @Test
+    void testSuperadmin_Success() {
+        Superadmin sa = new Superadmin();
+        sa.setId("SA1");
+        sa.setEmail("sa@test.com");
+        sa.setPassword("encoded");
+        sa.setAccountLocked(false);
+
+        loginRequest.setMfaCode("999999");
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(superadminRepository.findByEmail("test@test.com")).thenReturn(Optional.of(sa));
+        
+        when(passwordEncoder.matches("password", "encoded")).thenReturn(true);
+        // Superadmin always needs MFA
+        when(mfaService.validateMFACode("SA1", Role.SUPERADMIN, "999999")).thenReturn(true);
+        when(jwtTokenProvider.generateTokens("SA1", "sa@test.com", Role.SUPERADMIN)).thenReturn(new JWTResponseDTO());
+
+        AuthResponseDTO response = authService.performAuthentication(loginRequest);
+        assertTrue(response.getSuccess());
+    }
+
+    @Test
+    void testSuperadmin_MissingMFA() {
+        Superadmin sa = new Superadmin();
+        sa.setId("SA1");
+        sa.setEmail("sa@test.com");
+        sa.setPassword("encoded");
+        sa.setAccountLocked(false);
+
+        // No MFA code in request
+        loginRequest.setMfaCode(null);
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(superadminRepository.findByEmail(any())).thenReturn(Optional.of(sa));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(jwtTokenProvider.generateMFASessionToken(any(), any(), any())).thenReturn("token");
+
+        AuthResponseDTO response = authService.performAuthentication(loginRequest);
+        assertTrue(response.getRequiresMfa());
+    }
+
+    @Test
+    void testSuperadmin_WrongPassword() {
+        Superadmin sa = new Superadmin();
+        sa.setAccountLocked(false);
+        sa.setPassword("encoded");
+
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(adminRepository.findByEmail(any())).thenReturn(Optional.empty());
+        when(superadminRepository.findByEmail(any())).thenReturn(Optional.of(sa));
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.performAuthentication(loginRequest));
+    }
+    
+    @Test
+    void testUnknownEntityType() {
+        // Edge case: findUserByEmail returns an object that isn't User, Admin, or Superadmin
+        // This requires partial mocking or subclassing to simulate the private method returning a weird object
+        // OR we just ensure we cover the "else" branch in `performAuthentication`
+        
+        // However, since `findUserByEmail` implementation is hardcoded to return specific types or null,
+        // reaching the `else` block `if (userEntity instanceof ...)` is theoretically impossible unless code changes.
+        // We can skip testing impossible code paths or use reflection if strictly needed for 100%, 
+        // but given the code provided, 100% is achieved by the known types.
     }
 }

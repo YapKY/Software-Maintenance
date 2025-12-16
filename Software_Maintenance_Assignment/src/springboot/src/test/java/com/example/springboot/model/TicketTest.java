@@ -6,70 +6,45 @@ import static org.junit.jupiter.api.Assertions.*;
 class TicketTest {
 
     @Test
-    void testTicketGettersAndSetters() {
-        // Arrange & Act
-        Ticket ticket = new Ticket();
-        ticket.setDocumentId("ticket123");
-        ticket.setBookingReference("ABC12345");
-        ticket.setCustomerId("cust123");
-        ticket.setPassengerId("pass123");
-        ticket.setSeatId("seat123");
-        ticket.setFlightId("F001");
-        ticket.setSeatNumberDisplay("101");
-        ticket.setSeatClassDisplay("Economy");
-
-        // Assert
-        assertEquals("ticket123", ticket.getDocumentId());
-        assertEquals("ABC12345", ticket.getBookingReference());
-        assertEquals("cust123", ticket.getCustomerId());
-        assertEquals("pass123", ticket.getPassengerId());
-        assertEquals("seat123", ticket.getSeatId());
-        assertEquals("F001", ticket.getFlightId());
-        assertEquals("101", ticket.getSeatNumberDisplay());
-        assertEquals("Economy", ticket.getSeatClassDisplay());
-    }
-
-    @Test
-    void testTicketDefaultConstructor() {
-        // Act
-        Ticket ticket = new Ticket();
-
-        // Assert
-        assertNull(ticket.getDocumentId());
-        assertNull(ticket.getBookingReference());
-        assertNull(ticket.getFlightDetails());
-        assertNull(ticket.getPassengerDetails());
-    }
-
-    @Test
-    void testTicketWithEnrichedData() {
-        // Arrange
+    void testGettersAndSetters() {
         Flight flight = new Flight();
-        flight.setFlightId("F001");
-
-        Passenger passenger = new Passenger();
-        passenger.setFullName("John Doe");
-
-        // Act
+        Passenger passenger = new Passenger(); // Assuming Passenger has a no-args constructor
+        
         Ticket ticket = new Ticket();
+        ticket.setDocumentId("docT");
+        ticket.setBookingReference("REF123");
+        ticket.setCustomerId("C1");
+        ticket.setPassengerId("P1");
+        ticket.setSeatId("S1");
+        ticket.setFlightId("F1");
+        ticket.setSeatNumberDisplay("12A");
+        ticket.setSeatClassDisplay("Economy");
         ticket.setFlightDetails(flight);
         ticket.setPassengerDetails(passenger);
 
-        // Assert
-        assertNotNull(ticket.getFlightDetails());
-        assertNotNull(ticket.getPassengerDetails());
-        assertEquals("F001", ticket.getFlightDetails().getFlightId());
-        assertEquals("John Doe", ticket.getPassengerDetails().getFullName());
+        assertEquals("docT", ticket.getDocumentId());
+        assertEquals("REF123", ticket.getBookingReference());
+        assertEquals("C1", ticket.getCustomerId());
+        assertEquals("12A", ticket.getSeatNumberDisplay());
+        assertEquals("Economy", ticket.getSeatClassDisplay());
+        assertSame(flight, ticket.getFlightDetails());
+        assertSame(passenger, ticket.getPassengerDetails());
     }
 
     @Test
-    void testTicketBookingReference() {
-        // Arrange & Act
-        Ticket ticket = new Ticket();
-        ticket.setBookingReference("XYZ98765");
+    void testEqualsAndHashCode() {
+        Ticket t1 = new Ticket();
+        t1.setBookingReference("ABC");
+        Ticket t2 = new Ticket();
+        t2.setBookingReference("ABC");
+        assertEquals(t1, t2);
+        assertEquals(t1.hashCode(), t2.hashCode());
+    }
 
-        // Assert
-        assertEquals("XYZ98765", ticket.getBookingReference());
-        assertEquals(8, ticket.getBookingReference().length());
+    @Test
+    void testToString() {
+        Ticket t = new Ticket();
+        t.setBookingReference("XYZ");
+        assertTrue(t.toString().contains("XYZ"));
     }
 }

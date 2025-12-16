@@ -1,51 +1,44 @@
 package com.example.springboot.dto.response;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("MessageResponseDTO Tests")
 class MessageResponseDTOTest {
 
     @Test
-    @DisplayName("Should create MessageResponseDTO")
-    void testValid() {
-        Object data = "test data";
+    void testBuilderAndGetters() {
+        Object dataObj = new Object();
         MessageResponseDTO dto = MessageResponseDTO.builder()
                 .success(true)
-                .message("Operation successful")
-                .data(data)
+                .message("Operation done")
+                .data(dataObj)
                 .build();
-        
+
         assertTrue(dto.getSuccess());
-        assertEquals("Operation successful", dto.getMessage());
-        assertEquals("test data", dto.getData());
+        assertEquals("Operation done", dto.getMessage());
+        assertSame(dataObj, dto.getData());
     }
 
     @Test
-    @DisplayName("Should handle null data")
-    void testNullData() {
-        MessageResponseDTO dto = MessageResponseDTO.builder()
-                .success(false)
-                .message("Error occurred")
-                .data(null)
-                .build();
-        
+    void testConstructorsAndSetters() {
+        MessageResponseDTO dto = new MessageResponseDTO(false, "Fail", null);
         assertFalse(dto.getSuccess());
-        assertNull(dto.getData());
+        
+        dto.setMessage("New Message");
+        assertEquals("New Message", dto.getMessage());
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
-        MessageResponseDTO dto1 = new MessageResponseDTO();
-        dto1.setSuccess(true);
-        dto1.setMessage("Test");
-        dto1.setData("data");
-        
-        MessageResponseDTO dto2 = new MessageResponseDTO(true, "Test", "data");
-        
+    void testEqualsAndHashCode() {
+        MessageResponseDTO dto1 = MessageResponseDTO.builder().message("A").build();
+        MessageResponseDTO dto2 = MessageResponseDTO.builder().message("A").build();
         assertEquals(dto1, dto2);
-        assertNotNull(dto1.toString());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        MessageResponseDTO dto = MessageResponseDTO.builder().message("Test").build();
+        assertTrue(dto.toString().contains("Test"));
     }
 }

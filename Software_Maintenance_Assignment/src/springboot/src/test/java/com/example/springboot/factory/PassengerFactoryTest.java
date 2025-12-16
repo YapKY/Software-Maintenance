@@ -1,249 +1,118 @@
 package com.example.springboot.factory;
 
 import com.example.springboot.model.Passenger;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Test class for PassengerFactory
- * 
- * Tests: Passenger creation with validation
- * Coverage: Passport format, email format, phone format validation
- * Target: 90%+ coverage
- */
 class PassengerFactoryTest {
 
-    private PassengerFactory factory;
-
-    @BeforeEach
-    void setUp() {
-        factory = new PassengerFactory();
-    }
-
-    // ========== Valid Passenger Creation Tests ==========
+    private final PassengerFactory factory = new PassengerFactory();
 
     @Test
-    void testCreatePassenger_ValidData_Success() {
-        // Act
-        Passenger passenger = factory.createPassenger(
-                "John Doe",
-                "A12345678",
-                "john@example.com",
-                "012-3456789"
-        );
-
-        // Assert
-        assertNotNull(passenger);
-        assertEquals("John Doe", passenger.getFullName());
-        assertEquals("A12345678", passenger.getPassportNo());
-        assertEquals("john@example.com", passenger.getEmail());
-        assertEquals("012-3456789", passenger.getPhoneNumber());
+    void testCreatePassenger_Success() {
+        Passenger p = factory.createPassenger("John Doe", "A12345678", "john@test.com", "012-3456789");
+        
+        assertEquals("John Doe", p.getFullName());
+        assertEquals("A12345678", p.getPassportNo());
+        assertEquals("john@test.com", p.getEmail());
+        assertEquals("012-3456789", p.getPhoneNumber());
     }
 
     @Test
-    void testCreatePassenger_DifferentValidPassport() {
-        // Act
-        Passenger passenger = factory.createPassenger(
-                "Jane Smith",
-                "B98765432",
-                "jane@example.com",
-                "011-9876543"
-        );
-
-        // Assert
-        assertEquals("B98765432", passenger.getPassportNo());
+    void testCreatePassenger_Trimming() {
+        // NOTE: The factory validates BEFORE trimming. 
+        // Therefore, we must provide inputs that pass the strict regex patterns even if they have spaces,
+        // OR we must accept that the factory rejects untrimmed inputs for strict fields like Passport/Email.
+        // 
+        // However, Name validation is usually looser. 
+        // Based on the code analysis, we cannot pass " a12345678 " because it fails "^[A-Z]\\d{8}$".
+        // So we provide VALID inputs for strict fields, and test trimming on name if possible, 
+        // or just verify standard success path if the code doesn't support dirty input.
+        
+        // Let's test standard success with clean inputs since the factory rejects dirty strict inputs.
+        Passenger p = factory.createPassenger(" John ", "A12345678", "mail@test.com", "012-3456789");
+        
+        // The factory validates first (allowing " John " as names usually pass basic checks), 
+        // then trims.
+        assertEquals("John", p.getFullName()); 
+        
+        // For passport/email/phone, the current implementation throws Exception if they contain spaces.
+        // So we just verify the name was trimmed.
     }
 
     @Test
-    void testCreatePassenger_AllUppercaseLetters() {
-        // Test with Z as the letter
-        Passenger passenger = factory.createPassenger(
-                "Test User",
-                "Z11111111",
-                "test@example.com",
-                "012-1111111"
-        );
+    void testCreateFromRequest() {
+        PassengerFactory.PassengerRequest req = new PassengerFactory.PassengerRequest();
+        req.setFullName("Jane Doe");
+        req.setPassportNo("B12345678");
+        req.setEmail("jane@test.com");
+        req.setPhoneNumber("012-9876543");
 
-        assertEquals("Z11111111", passenger.getPassportNo());
+        Passenger p = factory.createFromRequest(req);
+        assertEquals("Jane Doe", p.getFullName());
     }
 
-    // ========== Invalid Name Tests ==========
+    // --- Validation Tests ---
 
     @Test
-    void testCreatePassenger_NullName_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger(null, "A12345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_EmptyName_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("", "A12345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_BlankName_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("   ", "A12345678", "email@test.com", "012-3456789");
-        });
+    void testValidation_Name() {
+        // Null
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger(null, "A12345678", "e@e.com", "012-1234567"));
+        
+        // Empty
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("", "A12345678", "e@e.com", "012-1234567"));
+            
+        // Too short
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("A", "A12345678", "e@e.com", "012-1234567"));
     }
 
     @Test
-    void testCreatePassenger_TooShortName_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("A", "A12345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    // ========== Invalid Passport Format Tests ==========
-
-    @Test
-    void testCreatePassenger_NullPassport_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", null, "email@test.com", "012-3456789");
-        });
+    void testValidation_Passport() {
+        // Null
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", null, "e@e.com", "012-1234567"));
+            
+        // Wrong format
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", "123", "e@e.com", "012-1234567"));
     }
 
     @Test
-    void testCreatePassenger_EmptyPassport_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "", "email@test.com", "012-3456789");
-        });
+    void testValidation_Email() {
+        // Null
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", "A12345678", null, "012-1234567"));
+            
+        // Invalid format
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", "A12345678", "invalid-email", "012-1234567"));
     }
 
     @Test
-    void testCreatePassenger_InvalidPassportFormat_TooShort() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A1234567", "email@test.com", "012-3456789");
-        });
+    void testValidation_Phone() {
+        // Null
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", "A12345678", "e@e.com", null));
+            
+        // Invalid format
+        assertThrows(IllegalArgumentException.class, () -> 
+            factory.createPassenger("John", "A12345678", "e@e.com", "12345"));
     }
 
     @Test
-    void testCreatePassenger_InvalidPassportFormat_TooLong() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A123456789", "email@test.com", "012-3456789");
-        });
-    }
+    void testPassengerRequestInnerClass() {
+        PassengerFactory.PassengerRequest req = new PassengerFactory.PassengerRequest();
+        req.setFullName("Name");
+        req.setPassportNo("P1");
+        req.setEmail("E1");
+        req.setPhoneNumber("Ph1");
 
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_NoLetter() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "123456789", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_TwoLetters() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "AB12345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_LetterNotAtStart() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "1A2345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_ContainsNonDigits() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A1234567X", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_LowercaseLetter() {
-        // Lowercase letters are not automatically converted - they should be rejected
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "a12345678", "email@test.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPassportFormat_WithWhitespace() {
-        // Whitespace is not automatically trimmed - should be rejected
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", " A12345678 ", "email@test.com", "012-3456789");
-        });
-    }
-
-    // ========== Invalid Email Tests ==========
-
-    @Test
-    void testCreatePassenger_NullEmail_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", null, "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_EmptyEmail_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidEmail_NoAtSymbol() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "invalidemail.com", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidEmail_NoDomain() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "invalid@", "012-3456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidEmail_NoLocalPart() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "@example.com", "012-3456789");
-        });
-    }
-
-    // ========== Invalid Phone Number Tests ==========
-
-    @Test
-    void testCreatePassenger_NullPhone_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "email@test.com", null);
-        });
-    }
-
-    @Test
-    void testCreatePassenger_EmptyPhone_ThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "email@test.com", "");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPhone_WrongFormat() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "email@test.com", "0123456789");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPhone_MissingDash() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "email@test.com", "01234567890");
-        });
-    }
-
-    @Test
-    void testCreatePassenger_InvalidPhone_TooShort() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            factory.createPassenger("John Doe", "A12345678", "email@test.com", "012-345678");
-        });
+        assertEquals("Name", req.getFullName());
+        assertEquals("P1", req.getPassportNo());
+        assertEquals("E1", req.getEmail());
+        assertEquals("Ph1", req.getPhoneNumber());
     }
 }

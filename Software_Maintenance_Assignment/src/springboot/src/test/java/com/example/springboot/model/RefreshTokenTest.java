@@ -2,123 +2,81 @@ package com.example.springboot.model;
 
 import com.example.springboot.enums.Role;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("RefreshToken Model Tests")
 class RefreshTokenTest {
 
     @Test
-    @DisplayName("Should create RefreshToken with builder")
-    void testBuilder() {
-        LocalDateTime expiry = LocalDateTime.now().plusDays(7);
-        RefreshToken token = RefreshToken.builder()
-                .id("token123")
-                .token("refresh-token")
-                .userId("user123")
-                .userRole(Role.USER)
-                .expiryDate(expiry)
-                .revoked(false)
-                .createdAt(LocalDateTime.now())
-                .build();
-        
-        assertEquals("token123", token.getId());
-        assertEquals("refresh-token", token.getToken());
-        assertEquals("user123", token.getUserId());
-        assertEquals(Role.USER, token.getUserRole());
-        assertFalse(token.getRevoked());
-    }
-
-    @Test
-    @DisplayName("Should test isExpired method")
-    void testIsExpired() {
-        RefreshToken expiredToken = RefreshToken.builder()
-                .expiryDate(LocalDateTime.now().minusDays(1))
-                .build();
-        
-        assertTrue(expiredToken.isExpired());
-        
-        RefreshToken validToken = RefreshToken.builder()
-                .expiryDate(LocalDateTime.now().plusDays(1))
-                .build();
-        
-        assertFalse(validToken.isExpired());
-    }
-
-    @Test
-    @DisplayName("Should test default values")
-    void testDefaults() {
-        RefreshToken token = RefreshToken.builder()
-                .id("123")
-                .token("token")
-                .userId("user123")
-                .userRole(Role.USER)
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .build();
-        
-        assertFalse(token.getRevoked());
+    void testBuilderDefaults() {
+        RefreshToken token = RefreshToken.builder().build();
         assertNotNull(token.getCreatedAt());
+        assertFalse(token.getRevoked()); // Default is false
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
+    void testAllArgsConstructorAndGetters() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiry = now.plusDays(7);
         
-        RefreshToken token1 = new RefreshToken();
-        token1.setId("123");
-        token1.setToken("token");
-        token1.setUserId("user123");
-        token1.setUserRole(Role.USER);
-        token1.setExpiryDate(expiry);
-        token1.setRevoked(false);
-        token1.setCreatedAt(now);
-        
-        RefreshToken token2 = new RefreshToken("123", "token",
-                "user123", Role.USER, expiry, false, now);
-        
-        assertEquals(token1, token2);
-        assertNotNull(token1.toString());
+        RefreshToken token = new RefreshToken(
+            "rt-123", "token_string", "user-1", Role.USER, expiry, true, now
+        );
+
+        assertEquals("rt-123", token.getId());
+        assertEquals("token_string", token.getToken());
+        assertEquals("user-1", token.getUserId());
+        assertEquals(Role.USER, token.getUserRole());
+        assertEquals(expiry, token.getExpiryDate());
+        assertTrue(token.getRevoked());
+        assertEquals(now, token.getCreatedAt());
     }
 
     @Test
-    @DisplayName("Should handle token revocation")
-    void testRevocation() {
-        RefreshToken token = RefreshToken.builder()
-                .id("123")
-                .token("token")
-                .userId("user123")
-                .userRole(Role.USER)
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .revoked(false)
-                .build();
-        
-        assertFalse(token.getRevoked());
-        
+    void testSetters() {
+        RefreshToken token = new RefreshToken();
+        token.setToken("newToken");
         token.setRevoked(true);
+        
+        assertEquals("newToken", token.getToken());
         assertTrue(token.getRevoked());
     }
 
     @Test
-    @DisplayName("Should handle different user roles")
-    void testDifferentRoles() {
-        RefreshToken userToken = RefreshToken.builder()
-                .userId("user1")
-                .userRole(Role.USER)
-                .token("token1")
-                .expiryDate(LocalDateTime.now().plusDays(7))
+    void testIsExpired_NotExpired() {
+        RefreshToken token = RefreshToken.builder()
+                .expiryDate(LocalDateTime.now().plusHours(1))
+                .build();
+        assertFalse(token.isExpired());
+    }
+
+    @Test
+    void testIsExpired_Expired() {
+        RefreshToken token = RefreshToken.builder()
+                .expiryDate(LocalDateTime.now().minusHours(1))
+                .build();
+        assertTrue(token.isExpired());
+    }
+
+    @Test
+    void testEqualsHashCodeToString() {
+        // Fix: Use a fixed timestamp to ensure exact equality checks
+        LocalDateTime fixedTime = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
+
+        RefreshToken t1 = RefreshToken.builder()
+                .token("ABC")
+                .createdAt(fixedTime)
                 .build();
         
-        RefreshToken adminToken = RefreshToken.builder()
-                .userId("admin1")
-                .userRole(Role.SUPERADMIN)
-                .token("token2")
-                .expiryDate(LocalDateTime.now().plusDays(7))
+        RefreshToken t2 = RefreshToken.builder()
+                .token("ABC")
+                .createdAt(fixedTime)
                 .build();
         
-        assertEquals(Role.USER, userToken.getUserRole());
-        assertEquals(Role.SUPERADMIN, adminToken.getUserRole());
+        assertEquals(t1, t2);
+        assertEquals(t1.hashCode(), t2.hashCode());
+        assertTrue(t1.toString().contains("RefreshToken"));
+        assertTrue(t1.toString().contains("ABC"));
     }
 }

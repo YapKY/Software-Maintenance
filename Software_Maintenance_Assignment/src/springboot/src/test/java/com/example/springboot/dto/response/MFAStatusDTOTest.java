@@ -1,42 +1,47 @@
 package com.example.springboot.dto.response;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("MFAStatusDTO Tests")
 class MFAStatusDTOTest {
 
     @Test
-    @DisplayName("Should create MFAStatusDTO with setup info")
-    void testWithSetupInfo() {
-        String[] backupCodes = {"code1", "code2", "code3"};
+    void testBuilderAndGetters() {
+        String[] codes = {"123", "456"};
         MFAStatusDTO dto = MFAStatusDTO.builder()
                 .mfaEnabled(true)
-                .secret("secret-key")
-                .qrCodeUrl("https://example.com/qr")
-                .backupCodes(backupCodes)
+                .secret("secretKey")
+                .qrCodeUrl("url")
+                .backupCodes(codes)
                 .build();
-        
+
         assertTrue(dto.getMfaEnabled());
-        assertEquals("secret-key", dto.getSecret());
-        assertEquals("https://example.com/qr", dto.getQrCodeUrl());
-        assertArrayEquals(backupCodes, dto.getBackupCodes());
+        assertEquals("secretKey", dto.getSecret());
+        assertEquals("url", dto.getQrCodeUrl());
+        assertArrayEquals(codes, dto.getBackupCodes());
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
-        String[] codes = {"c1", "c2"};
-        MFAStatusDTO dto1 = new MFAStatusDTO();
-        dto1.setMfaEnabled(false);
-        dto1.setSecret("secret");
-        dto1.setQrCodeUrl("url");
-        dto1.setBackupCodes(codes);
+    void testConstructorsAndSetters() {
+        MFAStatusDTO dto = new MFAStatusDTO();
+        dto.setMfaEnabled(false);
+        assertFalse(dto.getMfaEnabled());
         
-        MFAStatusDTO dto2 = new MFAStatusDTO(false, "secret", "url", codes);
-        
+        MFAStatusDTO dtoAll = new MFAStatusDTO(true, "s", "u", null);
+        assertTrue(dtoAll.getMfaEnabled());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        MFAStatusDTO dto1 = MFAStatusDTO.builder().secret("A").build();
+        MFAStatusDTO dto2 = MFAStatusDTO.builder().secret("A").build();
         assertEquals(dto1, dto2);
-        assertNotNull(dto1.toString());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        MFAStatusDTO dto = MFAStatusDTO.builder().secret("Hidden").build();
+        assertTrue(dto.toString().contains("Hidden"));
     }
 }

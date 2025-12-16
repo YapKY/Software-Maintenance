@@ -6,55 +6,38 @@ import static org.junit.jupiter.api.Assertions.*;
 class PaymentTest {
 
     @Test
-    void testPaymentGettersAndSetters() {
-        // Arrange & Act
+    void testGettersAndSetters() {
         Payment payment = new Payment();
-        payment.setDocumentId("payment123");
-        payment.setAmount(200.50);
-        payment.setPaymentDate("2023-11-11T13:00:00");
+        payment.setDocumentId("doc1");
+        payment.setAmount(100.50);
+        payment.setPaymentDate("2023-12-01");
         payment.setPaymentStatus(true);
-        payment.setStripePaymentIntentId("pi_123456");
-        payment.setTicketId("ticket123");
+        payment.setStripePaymentIntentId("pi_123");
+        payment.setTicketId("t1");
 
-        // Assert
-        assertEquals("payment123", payment.getDocumentId());
-        assertEquals(200.50, payment.getAmount());
-        assertEquals("2023-11-11T13:00:00", payment.getPaymentDate());
+        assertEquals("doc1", payment.getDocumentId());
+        assertEquals(100.50, payment.getAmount());
+        assertEquals("2023-12-01", payment.getPaymentDate());
         assertTrue(payment.isPaymentStatus());
-        assertEquals("pi_123456", payment.getStripePaymentIntentId());
-        assertEquals("ticket123", payment.getTicketId());
+        assertEquals("pi_123", payment.getStripePaymentIntentId());
+        assertEquals("t1", payment.getTicketId());
     }
 
     @Test
-    void testPaymentDefaultConstructor() {
-        // Act
-        Payment payment = new Payment();
-
-        // Assert
-        assertNull(payment.getDocumentId());
-        assertNull(payment.getAmount());
-        assertFalse(payment.isPaymentStatus());
+    void testEqualsAndHashCode() {
+        Payment p1 = new Payment();
+        p1.setTicketId("T1");
+        Payment p2 = new Payment();
+        p2.setTicketId("T1");
+        
+        assertEquals(p1, p2);
+        assertEquals(p1.hashCode(), p2.hashCode());
     }
 
     @Test
-    void testPaymentSuccessStatus() {
-        // Arrange & Act
-        Payment payment = new Payment();
-        payment.setPaymentStatus(true);
-        payment.setStripePaymentIntentId("pi_success");
-
-        // Assert
-        assertTrue(payment.isPaymentStatus());
-        assertNotNull(payment.getStripePaymentIntentId());
-    }
-
-    @Test
-    void testPaymentFailureStatus() {
-        // Arrange & Act
-        Payment payment = new Payment();
-        payment.setPaymentStatus(false);
-
-        // Assert
-        assertFalse(payment.isPaymentStatus());
+    void testToString() {
+        Payment p = new Payment();
+        p.setStripePaymentIntentId("STRIPE_ID");
+        assertTrue(p.toString().contains("STRIPE_ID"));
     }
 }

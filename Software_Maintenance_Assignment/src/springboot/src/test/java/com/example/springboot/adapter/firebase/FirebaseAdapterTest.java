@@ -3,7 +3,7 @@ package com.example.springboot.adapter.firebase;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
-import org.junit.jupiter.api.DisplayName;
+import com.google.firebase.auth.AuthErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,85 +24,71 @@ class FirebaseAdapterTest {
     private FirebaseAdapter firebaseAdapter;
 
     @Test
-    @DisplayName("Should create user successfully")
     void testCreateUser_Success() throws FirebaseAuthException {
-        // Arrange
-        UserRecord mockUserRecord = mock(UserRecord.class);
-        when(mockUserRecord.getUid()).thenReturn("firebase-uid-123");
+        // Mock the UserRecord result
+        UserRecord mockRecord = mock(UserRecord.class);
+        when(mockRecord.getUid()).thenReturn("firebase-uid-123");
         
-        when(firebaseAuth.createUser(any(UserRecord.CreateRequest.class)))
-                .thenReturn(mockUserRecord);
+        // Mock createUser call
+        when(firebaseAuth.createUser(any(UserRecord.CreateRequest.class))).thenReturn(mockRecord);
 
-        // Act
-        String uid = firebaseAdapter.createUser("test@example.com", "password123", "Test User");
-
-        // Assert
+        // Fix: Use a valid password (>6 chars) to pass Firebase SDK internal validation
+        String uid = firebaseAdapter.createUser("test@test.com", "password123", "Name");
         assertEquals("firebase-uid-123", uid);
-        verify(firebaseAuth).createUser(any(UserRecord.CreateRequest.class));
     }
 
     @Test
-    @DisplayName("Should throw RuntimeException when creation fails")
     void testCreateUser_Failure() throws FirebaseAuthException {
-        // Arrange
-        when(firebaseAuth.createUser(any(UserRecord.CreateRequest.class)))
-                .thenThrow(new RuntimeException("Firebase error"));
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-            // FIX: Use a password > 6 chars so it reaches the Firebase call
-            firebaseAdapter.createUser("test@example.com", "strongPassword123", "Name")
-        );
+        // Simulate Firebase exception
+        // Fix: Use valid inputs so we actually reach the mock
+        when(firebaseAuth.createUser(any())).thenThrow(new RuntimeException("Firebase Error"));
         
-        // Assert
-        assertTrue(exception.getMessage().contains("Firebase error")); 
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> 
+            firebaseAdapter.createUser("error@test.com", "password123", "Name"));
+        
+        assertNotNull(ex.getMessage());
+        assertTrue(ex.getMessage().contains("Firebase Error"));
     }
 
     @Test
-    @DisplayName("Should send password reset email successfully")
     void testSendPasswordResetEmail_Success() throws FirebaseAuthException {
-        // Arrange
-        UserRecord mockUserRecord = mock(UserRecord.class);
-        when(firebaseAuth.getUserByEmail("test@example.com")).thenReturn(mockUserRecord);
-        when(firebaseAuth.generatePasswordResetLink("test@example.com")).thenReturn("https://reset.link");
+        // 1. User exists
+        when(firebaseAuth.getUserByEmail("test@test.com")).thenReturn(mock(UserRecord.class));
+        // 2. Link generation works
+        when(firebaseAuth.generatePasswordResetLink("test@test.com")).thenReturn("http://reset-link");
 
-        // Act
-        firebaseAdapter.sendPasswordResetEmail("test@example.com");
-
-        // Assert
-        verify(firebaseAuth).getUserByEmail("test@example.com");
-        verify(firebaseAuth).generatePasswordResetLink("test@example.com");
+        assertDoesNotThrow(() -> firebaseAdapter.sendPasswordResetEmail("test@test.com"));
+        
+        verify(firebaseAuth).generatePasswordResetLink("test@test.com");
     }
 
     @Test
-    @DisplayName("Should handle USER_NOT_FOUND gracefully")
     void testSendPasswordResetEmail_UserNotFound() throws FirebaseAuthException {
-        // Arrange
-        FirebaseAuthException mockException = mock(FirebaseAuthException.class);
-        // We need to mock the error code behavior if possible, or just the exception type
-        // Assuming strict mocking of AuthErrorCode might be hard, so we simulate the exception behavior
-        // However, standard Mockito might struggle with final AuthErrorCode enum access if not using PowerMock.
-        // We will rely on the exception message or type if possible, but here we'll assume standard mocking.
+        // Mock FirebaseAuthException with "USER_NOT_FOUND"
+        FirebaseAuthException mockEx = mock(FirebaseAuthException.class);
+        when(mockEx.getAuthErrorCode()).thenReturn(AuthErrorCode.USER_NOT_FOUND);
         
-        // Strategy: We can mock the exception throwing.
-        // Note: In a real unit test, mocking specific Firebase error codes without PowerMock can be tricky.
-        // For this script, we will simulate the behavior based on the adapter code structure.
-        
-        // If the adapter checks `e.getAuthErrorCode().name().equals("USER_NOT_FOUND")`
-        // We need to construct the exception carefully. 
-        // Since we can't easily instantiate FirebaseAuthException with specific codes in simple Mockito:
-        // We will mock the exception to throw a generic one to verify the CATCH block logic.
-        
-        // ALTERNATIVE: Since we cannot easily mock the Enum return in FirebaseAuthException without PowerMock,
-        // we will test the general failure case which covers the catch block.
-        
-        when(firebaseAuth.getUserByEmail("unknown@example.com"))
-                .thenThrow(new RuntimeException("Generic error")); 
-                // Using generic error because mimicking FirebaseAuthException internals is complex without specific libs.
+        when(firebaseAuth.getUserByEmail("unknown@test.com")).thenThrow(mockEx);
 
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            firebaseAdapter.sendPasswordResetEmail("unknown@example.com")
-        );
+        // Should return silently (log warning)
+        assertDoesNotThrow(() -> firebaseAdapter.sendPasswordResetEmail("unknown@test.com"));
+        
+        // Should NOT try to generate link
+        verify(firebaseAuth, never()).generatePasswordResetLink(any());
+    }
+
+    @Test
+    void testSendPasswordResetEmail_OtherFirebaseError() throws FirebaseAuthException {
+        // Use a generic error code (not USER_NOT_FOUND) to trigger the catch block
+        FirebaseAuthException mockEx = mock(FirebaseAuthException.class);
+        when(mockEx.getAuthErrorCode()).thenReturn(AuthErrorCode.EMAIL_ALREADY_EXISTS);
+        when(mockEx.getMessage()).thenReturn("Simulated Firebase Error");
+
+        when(firebaseAuth.getUserByEmail("error@test.com")).thenThrow(mockEx);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> 
+            firebaseAdapter.sendPasswordResetEmail("error@test.com"));
+        
+        assertTrue(ex.getMessage().contains("Failed to send password reset email"));
     }
 }

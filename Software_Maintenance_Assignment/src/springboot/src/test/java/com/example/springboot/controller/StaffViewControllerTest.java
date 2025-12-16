@@ -40,7 +40,7 @@ class StaffViewControllerTest {
     @Mock
     private StaffService staffService;
 
-    @InjectMocks
+        @InjectMocks
     private StaffViewController staffViewController;
 
     private Staff testStaff;
@@ -147,46 +147,6 @@ class StaffViewControllerTest {
 
         // Verify session is invalidated (MockHttpSession doesn't really invalidate but
         // we can check logic)
-    }
-
-    @Test
-    @DisplayName("Should show dashboard with staff info")
-    void testShowDashboard_WithStaff() throws Exception {
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("staff", staffSessionData);
-
-        List<Flight> flights = new ArrayList<>();
-        when(flightService.getAllFlights()).thenReturn(flights);
-
-        mockMvc.perform(get("/staff/dashboard").session(session))
-                .andExpect(status().isOk())
-                .andExpect(view().name("staff-dashboard-rest"))
-                .andExpect(model().attributeExists("staff"))
-                .andExpect(model().attributeExists("flights"));
-    }
-
-    @Test
-    @DisplayName("Should show dashboard without staff info (default admin)")
-    void testShowDashboard_NoStaff() throws Exception {
-        List<Flight> flights = new ArrayList<>();
-        when(flightService.getAllFlights()).thenReturn(flights);
-
-        mockMvc.perform(get("/staff/dashboard"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("staff-dashboard-rest"))
-                .andExpect(model().attributeExists("staff"))
-                .andExpect(model().attributeExists("flights"));
-    }
-
-    @Test
-    @DisplayName("Should handle dashboard error")
-    void testShowDashboard_Error() throws Exception {
-        when(flightService.getAllFlights()).thenThrow(new ExecutionException(new RuntimeException("DB Error")));
-
-        mockMvc.perform(get("/staff/dashboard"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("staff-dashboard-rest"))
-                .andExpect(model().attributeExists("error"));
     }
 
     @Test

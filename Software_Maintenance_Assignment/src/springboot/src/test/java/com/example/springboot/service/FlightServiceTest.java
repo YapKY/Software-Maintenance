@@ -16,14 +16,17 @@ import org.mockito.quality.Strictness;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-//import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-//import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 
+/**
+ * Test class for FlightService
+ * * Tests Module: Staff Dashboard - Flight Management
+ * Coverage: CRUD operations, validation, search functionality
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class FlightServiceTest {
@@ -51,6 +54,21 @@ class FlightServiceTest {
 
     @Mock
     private QueryDocumentSnapshot queryDocumentSnapshot;
+
+    @Mock
+    private DocumentReference documentReference;
+
+    @Mock
+    private ApiFuture<DocumentReference> futureDocumentReference;
+
+    @Mock
+    private ApiFuture<DocumentSnapshot> futureDocumentSnapshot;
+
+    @Mock
+    private DocumentSnapshot documentSnapshot;
+
+    @Mock
+    private ApiFuture<WriteResult> futureWriteResult;
 
     @InjectMocks
     private FlightService flightService;
@@ -83,7 +101,7 @@ class FlightServiceTest {
         // Arrange
         when(firestore.collection("flights")).thenReturn(collectionReference);
         
-        // FIX: Mock the missing .whereEqualTo("status", "ACTIVE") call
+        // Mock the .whereEqualTo("status", "ACTIVE") call
         when(collectionReference.whereEqualTo("status", "ACTIVE")).thenReturn(query);
         
         when(query.get()).thenReturn(future);
@@ -125,6 +143,7 @@ class FlightServiceTest {
         Flight flight2 = new Flight();
         flight2.setFlightId("F002");
         flight2.setDepartureCountry("Singapore");
+        flight2.setStatus("ACTIVE");
 
         QueryDocumentSnapshot doc2 = mock(QueryDocumentSnapshot.class);
 
@@ -155,14 +174,35 @@ class FlightServiceTest {
         assertThrows(RuntimeException.class, () -> flightService.getAllFlights());
     }
 
-    // ========== Search Flights Tests (No Results) ==========
+    // ========== Search Flights Tests ==========
+
+    @Test
+    void testSearchFlights_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.whereEqualTo(anyString(), anyString())).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.getDocuments()).thenReturn(Collections.singletonList(queryDocumentSnapshot));
+
+        mockDocumentConversion(queryDocumentSnapshot, testFlight);
+
+        // Act
+        List<Flight> results = flightService.searchFlights("Malaysia", "Japan", "11/11/2023");
+
+        // Assert
+        assertNotNull(results);
+        assertEquals(1, results.size());
+        assertEquals("F001", results.get(0).getFlightId());
+    }
 
     @Test
     void testSearchFlights_NoResults() throws Exception {
         // Arrange
         when(firestore.collection("flights")).thenReturn(collectionReference);
         
-        // FIX: Start chain with status=ACTIVE
+        // Start chain with status=ACTIVE
         when(collectionReference.whereEqualTo("status", "ACTIVE")).thenReturn(query);
         
         // Allow any subsequent filters to return the same query mock
@@ -193,21 +233,198 @@ class FlightServiceTest {
         );
     }
 
-    private void mockDocumentConversion(DocumentSnapshot mockDoc, Flight flight) {
-        when(mockDoc.getId()).thenReturn(flight.getDocumentId());
-        when(mockDoc.getString("flightId")).thenReturn(flight.getFlightId());
-        when(mockDoc.getString("departureCountry")).thenReturn(flight.getDepartureCountry());
-        when(mockDoc.getString("arrivalCountry")).thenReturn(flight.getArrivalCountry());
-        when(mockDoc.getString("departureDate")).thenReturn(flight.getDepartureDate());
-        when(mockDoc.getString("arrivalDate")).thenReturn(flight.getArrivalDate());
-        when(mockDoc.getLong("departureTime")).thenReturn((long) flight.getDepartureTime());
-        when(mockDoc.getLong("arrivalTime")).thenReturn((long) flight.getArrivalTime());
-        when(mockDoc.getLong("boardingTime")).thenReturn((long) flight.getBoardingTime());
-        when(mockDoc.getDouble("economyPrice")).thenReturn(flight.getEconomyPrice());
-        when(mockDoc.getDouble("businessPrice")).thenReturn(flight.getBusinessPrice());
-        when(mockDoc.getString("planeNo")).thenReturn(flight.getPlaneNo());
-        when(mockDoc.getLong("totalSeats")).thenReturn((long) flight.getTotalSeats());
-        when(mockDoc.getString("status")).thenReturn(flight.getStatus());
+    // ========== Get Flight by ID Tests ==========
+
+    @Test
+    void testGetFlightById_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("doc123")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(true);
+
+        mockDocumentConversion(documentSnapshot, testFlight);
+
+        // Act
+        Flight result = flightService.getFlightById("doc123");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("F001", result.getFlightId());
+    }
+
+    @Test
+    void testGetFlightById_NotFound() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("invalid")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> 
+            flightService.getFlightById("invalid")
+        );
+    }
+
+    // ========== Get Flight by Flight ID Tests ==========
+
+    @Test
+    void testGetFlightByFlightId_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.whereEqualTo("flightId", "F001")).thenReturn(query);
+        when(query.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.isEmpty()).thenReturn(false);
+        when(querySnapshot.getDocuments()).thenReturn(Collections.singletonList(queryDocumentSnapshot));
+
+        mockDocumentConversion(queryDocumentSnapshot, testFlight);
+
+        // Act
+        Flight result = flightService.getFlightByFlightId("F001");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("F001", result.getFlightId());
+    }
+
+    @Test
+    void testGetFlightByFlightId_NotFound() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.whereEqualTo("flightId", "F999")).thenReturn(query);
+        when(query.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.isEmpty()).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> 
+            flightService.getFlightByFlightId("F999")
+        );
+    }
+
+    // ========== Add Flight Tests ==========
+
+    @Test
+    void testAddFlight_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.whereEqualTo("flightId", "F001")).thenReturn(query);
+        when(query.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.getDocuments()).thenReturn(Collections.emptyList());
+        
+        when(collectionReference.add(anyMap())).thenReturn(futureDocumentReference);
+        when(futureDocumentReference.get()).thenReturn(documentReference);
+        when(documentReference.getId()).thenReturn("newDoc123");
+
+        // Act
+        Flight result = flightService.addFlight(testFlight);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("newDoc123", result.getDocumentId());
+        verify(seatService).createSeatsForFlight("F001", 32);
+    }
+
+    @Test
+    void testAddFlight_DuplicateFlightId() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.whereEqualTo("flightId", "F001")).thenReturn(query);
+        when(query.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.getDocuments()).thenReturn(Collections.singletonList(queryDocumentSnapshot));
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> 
+            flightService.addFlight(testFlight)
+        );
+    }
+
+    // ========== Update Flight Tests ==========
+
+    @Test
+    void testUpdateFlight_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("doc123")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(true);
+        
+        when(collectionReference.whereEqualTo("flightId", "F001")).thenReturn(query);
+        when(query.whereEqualTo("status", "ACTIVE")).thenReturn(query);
+        when(query.get()).thenReturn(future);
+        when(future.get()).thenReturn(querySnapshot);
+        when(querySnapshot.getDocuments()).thenReturn(Collections.emptyList());
+        
+        when(documentReference.update(anyMap())).thenReturn(futureWriteResult);
+
+        // Act
+        Flight result = flightService.updateFlight("doc123", testFlight);
+
+        // Assert
+        assertNotNull(result);
+        verify(documentReference).update(anyMap());
+    }
+
+    @Test
+    void testUpdateFlight_NotFound() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("invalid")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> 
+            flightService.updateFlight("invalid", testFlight)
+        );
+    }
+
+    // ========== Delete Flight Tests ==========
+
+    @Test
+    void testDeleteFlight_Success() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("doc123")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(true);
+        when(documentSnapshot.getString("flightId")).thenReturn("F001");
+        when(documentReference.update(anyMap())).thenReturn(futureWriteResult);
+
+        // Act
+        flightService.deleteFlight("doc123");
+
+        // Assert
+        verify(documentReference).update(anyMap());
+        verify(seatService).deleteSeatsForFlight("F001");
+    }
+
+    @Test
+    void testDeleteFlight_NotFound() throws Exception {
+        // Arrange
+        when(firestore.collection("flights")).thenReturn(collectionReference);
+        when(collectionReference.document("invalid")).thenReturn(documentReference);
+        when(documentReference.get()).thenReturn(futureDocumentSnapshot);
+        when(futureDocumentSnapshot.get()).thenReturn(documentSnapshot);
+        when(documentSnapshot.exists()).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> 
+            flightService.deleteFlight("invalid")
+        );
     }
 
     // ========== Validation Tests ==========
@@ -215,7 +432,7 @@ class FlightServiceTest {
     @Test
     void testSearchFlights_ValidatesParameters() {
         // Test that service handles null parameters gracefully
-        // Implementation specific - may throw exception or return empty list
+        // Act & Assert
         try {
             List<Flight> results = flightService.searchFlights(null, null, null);
             // If it doesn't throw, it should return empty or handle gracefully
@@ -229,6 +446,7 @@ class FlightServiceTest {
     @Test
     void testGetFlightById_ValidatesParameter() {
         // Test that service handles null/empty ID
+        // Act & Assert
         try {
             Flight result = flightService.getFlightById(null);
             // Should either throw or return null
@@ -242,6 +460,7 @@ class FlightServiceTest {
     @Test
     void testGetFlightByFlightId_ValidatesParameter() {
         // Test that service handles null/empty flight ID
+        // Act & Assert
         try {
             Flight result = flightService.getFlightByFlightId(null);
             // Should either throw or return null
@@ -257,5 +476,24 @@ class FlightServiceTest {
         // Verify that the repository is properly injected
         assertNotNull(flightService);
         // The service should have been created with the mocked repository
+    }
+
+    // ========== Helper Methods ==========
+
+    private void mockDocumentConversion(DocumentSnapshot mockDoc, Flight flight) {
+        when(mockDoc.getId()).thenReturn(flight.getDocumentId());
+        when(mockDoc.getString("flightId")).thenReturn(flight.getFlightId());
+        when(mockDoc.getString("departureCountry")).thenReturn(flight.getDepartureCountry());
+        when(mockDoc.getString("arrivalCountry")).thenReturn(flight.getArrivalCountry());
+        when(mockDoc.getString("departureDate")).thenReturn(flight.getDepartureDate());
+        when(mockDoc.getString("arrivalDate")).thenReturn(flight.getArrivalDate());
+        when(mockDoc.getLong("departureTime")).thenReturn((long) flight.getDepartureTime());
+        when(mockDoc.getLong("arrivalTime")).thenReturn((long) flight.getArrivalTime());
+        when(mockDoc.getLong("boardingTime")).thenReturn((long) flight.getBoardingTime());
+        when(mockDoc.getDouble("economyPrice")).thenReturn(flight.getEconomyPrice());
+        when(mockDoc.getDouble("businessPrice")).thenReturn(flight.getBusinessPrice());
+        when(mockDoc.getString("planeNo")).thenReturn(flight.getPlaneNo());
+        when(mockDoc.getLong("totalSeats")).thenReturn((long) flight.getTotalSeats());
+        when(mockDoc.getString("status")).thenReturn(flight.getStatus());
     }
 }

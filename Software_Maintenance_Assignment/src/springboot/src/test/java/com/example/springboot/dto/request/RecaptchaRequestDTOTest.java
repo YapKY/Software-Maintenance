@@ -38,6 +38,7 @@ class RecaptchaRequestDTOTest {
                 .build();
         Set<ConstraintViolation<RecaptchaRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().equals("reCAPTCHA token is required")));
     }
 
     @Test
@@ -59,7 +60,7 @@ class RecaptchaRequestDTOTest {
         RecaptchaRequestDTO dto2 = new RecaptchaRequestDTO("token123");
         
         assertEquals(dto1, dto2);
-        assertEquals("token123", dto2.getRecaptchaToken());
+        assertEquals(dto1.hashCode(), dto2.hashCode());
         assertNotNull(dto1.toString());
     }
 }

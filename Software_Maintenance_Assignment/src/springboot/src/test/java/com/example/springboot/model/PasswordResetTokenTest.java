@@ -2,109 +2,59 @@ package com.example.springboot.model;
 
 import com.example.springboot.enums.Role;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("PasswordResetToken Model Tests")
 class PasswordResetTokenTest {
 
     @Test
-    @DisplayName("Should create PasswordResetToken with builder")
-    void testBuilder() {
-        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
-        PasswordResetToken token = PasswordResetToken.builder()
-                .id("token123")
-                .token("reset-token")
-                .userId("user123")
-                .userRole(Role.USER)
-                .email("user@example.com")
-                .expiryDate(expiry)
-                .used(false)
-                .createdAt(LocalDateTime.now())
-                .build();
-        
-        assertEquals("token123", token.getId());
-        assertEquals("reset-token", token.getToken());
-        assertEquals("user123", token.getUserId());
-        assertEquals(Role.USER, token.getUserRole());
-        assertEquals("user@example.com", token.getEmail());
-        assertFalse(token.getUsed());
-    }
-
-    @Test
-    @DisplayName("Should test isExpired method")
-    void testIsExpired() {
-        PasswordResetToken expiredToken = PasswordResetToken.builder()
-                .expiryDate(LocalDateTime.now().minusHours(1))
-                .build();
-        
-        assertTrue(expiredToken.isExpired());
-        
-        PasswordResetToken validToken = PasswordResetToken.builder()
-                .expiryDate(LocalDateTime.now().plusHours(1))
-                .build();
-        
-        assertFalse(validToken.isExpired());
-    }
-
-    @Test
-    @DisplayName("Should test default values")
-    void testDefaults() {
-        PasswordResetToken token = PasswordResetToken.builder()
-                .id("123")
-                .token("token")
-                .userId("user123")
-                .userRole(Role.USER)
-                .email("user@example.com")
-                .expiryDate(LocalDateTime.now().plusHours(1))
-                .build();
-        
-        assertFalse(token.getUsed());
+    void testBuilderDefaults() {
+        PasswordResetToken token = PasswordResetToken.builder().build();
         assertNotNull(token.getCreatedAt());
+        assertFalse(token.getUsed());
     }
 
     @Test
-    @DisplayName("Should test all constructors")
-    void testConstructors() {
+    void testIsExpired() {
+        PasswordResetToken validToken = PasswordResetToken.builder()
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .build();
+        assertFalse(validToken.isExpired());
+
+        PasswordResetToken expiredToken = PasswordResetToken.builder()
+                .expiryDate(LocalDateTime.now().minusMinutes(10))
+                .build();
+        assertTrue(expiredToken.isExpired());
+    }
+
+    @Test
+    void testAllFields() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiry = now.plusHours(1);
-        
-        PasswordResetToken token1 = new PasswordResetToken();
-        token1.setId("123");
-        token1.setToken("token");
-        token1.setUserId("user123");
-        token1.setUserRole(Role.ADMIN);
-        token1.setEmail("admin@example.com");
-        token1.setExpiryDate(expiry);
-        token1.setUsed(false);
-        token1.setCreatedAt(now);
-        
-        PasswordResetToken token2 = new PasswordResetToken("123", "token",
-                "user123", Role.ADMIN, "admin@example.com", expiry, false, now);
-        
-        assertEquals(token1, token2);
-        assertNotNull(token1.toString());
+        PasswordResetToken token = new PasswordResetToken(
+                "id", "tok", "uid", Role.USER, "e@e.com", now, true, now
+        );
+        assertEquals("e@e.com", token.getEmail());
+        assertEquals(Role.USER, token.getUserRole());
     }
 
     @Test
-    @DisplayName("Should handle different user roles")
-    void testDifferentRoles() {
-        PasswordResetToken userToken = PasswordResetToken.builder()
-                .userId("user1")
-                .userRole(Role.USER)
-                .email("user@example.com")
-                .expiryDate(LocalDateTime.now().plusHours(1))
+    void testEqualsHashCodeToString() {
+        // Fix: Use a fixed timestamp for both objects to ensure exact equality
+        LocalDateTime fixedTime = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
+        
+        PasswordResetToken t1 = PasswordResetToken.builder()
+                .token("A")
+                .createdAt(fixedTime)
+                .build();
+                
+        PasswordResetToken t2 = PasswordResetToken.builder()
+                .token("A")
+                .createdAt(fixedTime)
                 .build();
         
-        PasswordResetToken adminToken = PasswordResetToken.builder()
-                .userId("admin1")
-                .userRole(Role.ADMIN)
-                .email("admin@example.com")
-                .expiryDate(LocalDateTime.now().plusHours(1))
-                .build();
-        
-        assertEquals(Role.USER, userToken.getUserRole());
-        assertEquals(Role.ADMIN, adminToken.getUserRole());
+        assertEquals(t1, t2);
+        assertEquals(t1.hashCode(), t2.hashCode());
+        assertTrue(t1.toString().contains("A"));
     }
 }

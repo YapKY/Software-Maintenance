@@ -6,53 +6,35 @@ import static org.junit.jupiter.api.Assertions.*;
 class SeatTest {
 
     @Test
-    void testSeatGettersAndSetters() {
-        // Arrange & Act
+    void testGettersAndSetters() {
         Seat seat = new Seat();
-        seat.setDocumentId("seat123");
-        seat.setSeatNumber(101);
+        seat.setDocumentId("docS");
+        seat.setSeatNumber(10);
         seat.setTypeOfSeat("Economy");
-        seat.setStatusSeat("Empty");
-        seat.setFlightId("F001");
-
-        // Assert
-        assertEquals("seat123", seat.getDocumentId());
-        assertEquals(101, seat.getSeatNumber());
-        assertEquals("Economy", seat.getTypeOfSeat());
-        assertEquals("Empty", seat.getStatusSeat());
-        assertEquals("F001", seat.getFlightId());
-    }
-
-    @Test
-    void testSeatDefaultConstructor() {
-        // Act
-        Seat seat = new Seat();
-
-        // Assert
-        assertNull(seat.getDocumentId());
-        assertEquals(0, seat.getSeatNumber());
-        assertNull(seat.getTypeOfSeat());
-    }
-
-    @Test
-    void testSeatBusinessClass() {
-        // Arrange & Act
-        Seat seat = new Seat();
-        seat.setTypeOfSeat("Business");
-        seat.setStatusSeat("Empty");
-
-        // Assert
-        assertEquals("Business", seat.getTypeOfSeat());
-        assertEquals("Empty", seat.getStatusSeat());
-    }
-
-    @Test
-    void testSeatBookedStatus() {
-        // Arrange & Act
-        Seat seat = new Seat();
         seat.setStatusSeat("Booked");
+        seat.setFlightId("F1");
 
-        // Assert
+        assertEquals("docS", seat.getDocumentId());
+        assertEquals(10, seat.getSeatNumber());
+        assertEquals("Economy", seat.getTypeOfSeat());
         assertEquals("Booked", seat.getStatusSeat());
+        assertEquals("F1", seat.getFlightId());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        Seat s1 = new Seat();
+        s1.setSeatNumber(5);
+        Seat s2 = new Seat();
+        s2.setSeatNumber(5);
+        assertEquals(s1, s2);
+        assertEquals(s1.hashCode(), s2.hashCode());
+    }
+    
+    @Test
+    void testToString() {
+        Seat s = new Seat();
+        s.setTypeOfSeat("Business");
+        assertTrue(s.toString().contains("Business"));
     }
 }
