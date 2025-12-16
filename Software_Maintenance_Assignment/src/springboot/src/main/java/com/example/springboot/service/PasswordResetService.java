@@ -98,6 +98,10 @@ public class PasswordResetService {
      * Step 2: Confirm Password Reset
      */
     public MessageResponseDTO confirmPasswordReset(PasswordResetConfirmRequestDTO request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
         PasswordResetToken token = tokenRepository.findByToken(request.getToken())
             .orElseThrow(() -> new InvalidTokenException("Invalid reset token"));
 

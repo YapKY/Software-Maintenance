@@ -135,8 +135,8 @@ public class ViewController {
             @RequestParam(required = false) String customerId,
             Model model) {
         model.addAttribute("flightId", flightId != null ? flightId : "");
-        model.addAttribute("customerId", customerId != null ? customerId : "GUEST");
-        return "booking";
+        model.addAttribute("customerId", customerId != null ? customerId : ""); 
+        return "booking"; 
     }
 
     @GetMapping("/payment")
@@ -158,7 +158,7 @@ public class ViewController {
     public String myTicketsPage(
             @RequestParam(required = false) String customerId,
             Model model) {
-        model.addAttribute("customerId", customerId != null ? customerId : "cust-123");
+        model.addAttribute("customerId", customerId != null ? customerId : "");
         return "my-tickets";
     }
 

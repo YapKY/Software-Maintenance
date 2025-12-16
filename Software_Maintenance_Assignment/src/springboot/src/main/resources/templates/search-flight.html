@@ -159,8 +159,15 @@
     </div>
 </div>
 
+<script src="/js/config/config.js"></script>
+<script src="/js/utils/storage.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/api/userApi.js"></script>
+
 <script>
-    const CUSTOMER_ID =  /*[[${customerId}]]*/"cust-123"; // Replace with actual logged-in customer ID
+    const urlParams = new URLSearchParams(window.location.search);
+    let CUSTOMER_ID = urlParams.get('customerId') || /*[[${customerId}]]*/ "";
+    //const CUSTOMER_ID =  /*[[${customerId}]]*/"cust-123"; // Replace with actual logged-in customer ID
 
     // Handle form submission
     document.getElementById('searchForm').addEventListener('submit', async function(e) {
